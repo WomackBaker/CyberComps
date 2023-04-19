@@ -1,0 +1,26 @@
+Steps
+
+1. Find all servers
+  Check the api file i.e. on the scoreboard there should be a link to all servers. However, your onion server will not be on there, you will need to download nmap on one of the ubuntu servers and scan for your onion server. 
+  
+  Command -- sudo apt-get install nmap
+  
+2. Log into all servers
+  RDP and ssh into all servers
+  
+3. Change all passwords and try to change/delete the default account.
+  We were able to change to delete account for all ubuntu servers but couldnt on windows. There might be a way though.
+  
+  Command -- sudo passwd root
+  
+4. Update all machines
+ 
+  Command -- sudo apt-get update
+  
+5. Scan for vulnerabilities on each machine
+
+  Command -- nmap --script vuln <ip address>
+  
+6. Secure ssh
+
+7. 
