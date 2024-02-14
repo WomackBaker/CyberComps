@@ -1,6 +1,5 @@
-#Script grabs LOCAL USERS and changes their passwords, then outputs a csv file with the username and password
+#Script grabs ONLY LOCAL USERS and changes their passwords, then outputs a csv file with the username and password
 
-#Script grabs all users and changes their passwords, then outputs a csv file with the username and password
 Import-Module ActiveDirectory
 
 $LocalUsers = Get-LocalUser | Where-Object { $_.PrincipalSource -eq "Local" }
