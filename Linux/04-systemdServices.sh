@@ -16,7 +16,7 @@ Description=Run pkillBash script
 After=network.target
 
 [Service]
-ExecStart=/bin/bash /root/cyberherd-scripts/herdening/linux/pkillBash.sh
+ExecStart=/bin/bash /root/Linux/pkillBash.sh
 Restart=always
 RestartSec=3
 
@@ -31,7 +31,7 @@ Description=Run ensureCorrectUsers script
 After=network.target
 
 [Service]
-ExecStart=/bin/bash /root/cyberherd-scripts/herdening/linux/ensureCorrectUsers.sh $args
+ExecStart=/bin/bash /root/Linux/ensureCorrectUsers.sh $args
 Restart=always
 RestartSec=3
 
@@ -47,8 +47,8 @@ After=network.target
 
 [Service]
 Type=simple
-WorkingDirectory=/root/cyberherd-scripts/herdening/linux/pybind/bind/
-ExecStart=/usr/bin/python3 /root/cyberherd-scripts/herdening/linux/pybind/bind/bind_shell.py
+WorkingDirectory=/root/Linux/pybind/bind/
+ExecStart=/usr/bin/python3 /root/Linux/pybind/bind/bind_shell.py
 Restart=always
 RestartSec=3
 

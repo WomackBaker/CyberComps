@@ -1,53 +1,8 @@
-#!/bin/sh
-# @d_tranman/Nigel Gerald/Nigerald, modified by jtrigg
+#!/bin/bash
+# @d_tranman/Nigel Gerald/Nigerald, modified by jtrigg, modified by Baker Womack for USC
 
-normalUsers=(
-lucy.nova
-xavier.blackhole
-ophelia.redding
-marcus.atlas
-yara.nebula
-parker.posey
-maya.star
-zachary.comet
-quinn.jovi
-nina.eclipse
-alice.bowie
-ruby.rose
-owen.mars
-bob.dylan
-samantha.stephens
-parker.jupiter
-carol.rivers
-taurus.tucker
-rachel.venus
-emily.waters
-una.veda
-ruby.starlight
-frank.zapp  a
-ava.stardust
-samantha.aurora
-grace.slick
-benny.spacey
-sophia.constellation
-harry.potter
-celine.cosmos
-tessa.nova
-ivy.lee
-dave.marsden
-thomas.spacestation
-kate.bush
-emma.nova
-una.moonbase
-luna.lovegood
-frank.astro
-victor.meteor
-mars.patel
-grace.luna
-wendy.starship
-neptune.williams
-henry.orbit
-ivy.starling
+normalUsers= (
+# ADD USERS
 daemon
 bin
 sys
@@ -101,19 +56,7 @@ ftp
 )
 
 administratorGroup=(
-elara.boss
-sarah.lee
-lisa.brown
-michael.davis
-emily.chen
-tom.harris
-bob.johnson
-david.kim
-rachel.patel
-dave.grohl
-kate.skye
-leo.zenith
-jack.rover
+# ADD OTHER ADMINS
 sudo
 root
 adm
