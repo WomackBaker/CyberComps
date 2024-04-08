@@ -1,7 +1,7 @@
 # Secure ssh
 if service sshd status > /dev/null; then
 	# We're using root over SSH, so we enable it
-	sed -i '1s;^;PermitRootLogin yes\n;' /etc/ssh/sshd_config
+	# sed -i '1s;^;PermitRootLogin yes\n;' /etc/ssh/sshd_config
 	sed -i '1s;^;PubkeyAuthentication no\n;' /etc/ssh/sshd_config
 
 	# Don't set UsePAM no for Fedora, RHEL, CentOS
