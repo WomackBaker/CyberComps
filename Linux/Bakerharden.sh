@@ -3,6 +3,10 @@
 
 ./changepasswords.sh
 
+# Ask for new root password
+echo "Enter the new root password:"
+read -s ROOTPW
+
 # Change root password
 echo -e "$ROOTPW\n$ROOTPW" | passwd root
 
