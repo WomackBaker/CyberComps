@@ -96,6 +96,7 @@ read answer
 
 if [ "$answer" = "y" ]; then
     sed -i "s/Port 22/Port 8081/g" /etc/ssh/sshd_config
+fi
 
 #Ensure that sshd starts after eth0 is up, not just after filesystem
 sed -i "s/start on filesystem/start on filesystem and net-device-up IFACE=eth0/g" /etc/init/ssh.conf
@@ -107,6 +108,7 @@ echo "Do you want to disable password authentication (y/n)"
 read answer
 if [ "$answer" = "y" ]; then
     sed -i "s/#PasswordAuthentication yes/PasswordAuthentication no/g" /etc/ssh/sshd_config
+fi
 
 #Disabling X11 forwarding
 sed -i "s/X11Forwarding yes/X11Forwarding no/g" /etc/ssh/sshd_config

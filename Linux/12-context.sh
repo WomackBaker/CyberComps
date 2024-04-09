@@ -1,7 +1,7 @@
 #!/bin/bash
 # @d_tranman/Nigel Gerald/Nigerald, modified by jtrigg, modified by Baker Womack for USC
 
-normalUsers= (
+normalUsers=(
 # ADD USERS
 daemon
 bin
