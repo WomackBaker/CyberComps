@@ -1,4 +1,4 @@
 Dear RedTeam,
-    pls follow me on twitter i need clout https://twitter.com/Altoid0day
+    pls follow me on twitter https://twitter.com/baker_womack
 Sincerely,
-    Your favorite mint Altoid0
+    Your favorite your friends at Cyco
