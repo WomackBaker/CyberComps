@@ -103,6 +103,9 @@ for port in "$@"; do
     sudo ufw allow "$port"
 done
 
+sudo ufw allow 22
+echo "Opened up port 22 just in case you forgot"
+
 sudo ufw --force enable
 echo "UFW has been configured and re-enabled."
 
