@@ -1,6 +1,6 @@
 # CyberComps
 
-Linux Scripts
+# Linux Scripts
 
 01 - # Script runs and only allows certain ports
     - ./script <port1> <port2> <port3>
@@ -28,32 +28,32 @@ Linux Scripts
 
 12 - # Context on system, grabs all services, service info 
 
-Windows
+# Windows
 
-# hardeningKitty.ps1 - Runs hardening kitty
+- hardeningKitty.ps1 - Runs hardening kitty
 
-# SMB.bat - Secures SMB
+- SMB.bat - Secures SMB
 
-# ServiceMonitor.ps1 - Actively monitors and allows user to kill/not kill
+- ServiceMonitor.ps1 - Actively monitors and allows user to kill/not kill
 
-# Log.ps1 - Starts logging
+- Log.ps1 - Starts logging
 
-# hardenOS.bat - General Hardening
+- hardenOS.bat - General Hardening
 
-# harden.ps1 - Mainly updates Windows
+- harden.ps1 - Mainly updates Windows
 
-# Gpo.ps1 - Grabs GPO
+- Gpo.ps1 - Grabs GPO
 
-# gatherContext.ps1 - Checks for users *Need to update user list*
+- gatherContext.ps1 - Checks for users *Need to update user list*
 
-# Fix.ps1 - Restores original group policy
+- Fix.ps1 - Restores original group policy
 
-# Exec.ps1 - Prints anything executed
+- Exec.ps1 - Prints anything executed
 
-# dcFirewall.bat - Sets firewall rules
+- dcFirewall.bat - Sets firewall rules
 
-# Comp.ps1 - Prints password changes, share access, and password changes
+- Comp.ps1 - Prints password changes, share access, and password changes
 
-# checkServices.ps1 - Checks on sus services
+- checkServices.ps1 - Checks on sus services
 
-# auditingOn.ps1 - Enables auditing
+- auditingOn.ps1 - Enables auditing
