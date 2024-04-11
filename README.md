@@ -57,3 +57,7 @@
 - checkServices.ps1 - Checks on sus services
 
 - auditingOn.ps1 - Enables auditing
+
+- getallusers.ps1 - Gets all domain and local users
+
+- passchangeAll.ps1 - Changes passwords to all in this format *user,password*
