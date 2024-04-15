@@ -26,6 +26,7 @@ else
     exit 0
 fi
 
+./getAllUsers.sh
 
 id_like_line=$(grep '^ID=' /etc/os-release)
 
