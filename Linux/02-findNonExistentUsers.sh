@@ -8,11 +8,14 @@ valid_shells=(/bin/bash /bin/sh /usr/bin/zsh /usr/bin/fish)
 
 # Read predefined users from user_list.txt
 readarray -t predefined_users < $USER_FILE
-predefined_users+=("ubuntu" "root")  # Keeping ubuntu and root as default predefined users
+predefined_users+=("root")  # Explicitly keep root to ensure it's never processed
 
 # Function to handle unauthorized users
 remove_unauthorized_users() {
     while IFS=: read -r username _ _ _ _ _ shell; do
+        if [[ "$username" == "root" ]]; then
+            continue  # Skip the root user
+        fi
         for valid_shell in "${valid_shells[@]}"; do
             if [[ "$shell" == "$valid_shell" ]]; then
                 if ! printf '%s\n' "${predefined_users[@]}" | grep -qx "$username"; then
@@ -28,6 +31,9 @@ remove_unauthorized_users() {
 # Function to secure user home directories
 secure_home_directories() {
     while IFS=: read -r username _ _ _ _ home _; do
+        if [[ "$username" == "root" ]]; then
+            continue  # Skip modifying root's home directory
+        fi
         if [ ! -d "$home" ]; then
             continue
         fi
