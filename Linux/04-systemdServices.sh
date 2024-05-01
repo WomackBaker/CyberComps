@@ -39,6 +39,21 @@ RestartSec=3
 WantedBy=multi-user.target
 EOF
 
+# Modify the ExecStart line to include arguments for ensureCorrectUsers.sh
+cat <<EOF >/etc/systemd/system/hasher.service
+[Unit]
+Description=Run hasher script
+After=network.target
+
+[Service]
+ExecStart=/bin/bash /root/Linux/linux-utility/hasher.sh $args
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
 # Reload systemd to recognize the new services
 systemctl daemon-reload
 
@@ -47,7 +62,9 @@ systemctl enable pkillBash.service
 systemctl start pkillBash.service
 systemctl enable ensureCorrectUsers.service
 systemctl start ensureCorrectUsers.service
-
+systemctl enable hasher.service
+systemctl start hasher.service
 # Optionally display the status of the services
 systemctl status ensureCorrectUsers.service
 systemctl status pkillBash.service
+systemctl status hasher.service
