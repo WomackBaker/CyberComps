@@ -8,8 +8,8 @@ current_shadow_hash="$(sha256sum /etc/shadow | awk '{print $1}')"
 #    Format of hashes.txt is assumed:
 #      passwd: <hash>
 #      shadow: <hash>
-stored_passwd_hash="$(awk -F': ' '/^passwd_hash:/{print $2}' /root/Linux/linux-utility/hash.txt)"
-stored_shadow_hash="$(awk -F': ' '/^shadow_hash:/{print $2}' /root/Linux/linux-utility/hash.txt)"
+stored_passwd_hash="$(awk -F': ' '/^passwd_hash:/{print $2}' /root/Linux/linux-utility/hashes.txt)"
+stored_shadow_hash="$(awk -F': ' '/^shadow_hash:/{print $2}' /root/Linux/linux-utility/hashes.txt)"
 
 # 3. Compare them
 if [[ "$current_passwd_hash" == "$stored_passwd_hash" && \

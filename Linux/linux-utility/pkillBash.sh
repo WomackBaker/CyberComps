@@ -7,6 +7,7 @@ while true; do
         if echo "$line" | grep -qE '([0-9]{1,3}\.){3}[0-9]{1,3}.*[0-9]+'; then
             pid=$(echo "$line" | awk '{print $2}')
             kill -9 "$pid"
+            echo "Killed process $pid" >> ~/script_log.txt
         fi
     done
     sleep 10
