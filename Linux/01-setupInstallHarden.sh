@@ -22,7 +22,7 @@ for port in "$@"; do
 done
 
 read -r -p "Do you want to proceed with the above ports? (y/n): " response
-if [[ "$response" =$HOME ^[Yy]$ ]]; then
+if [[ "$response" =~ ^[Yy]$ ]]; then
     echo "Proceeding with the setup..."
 else
     echo "Aborting."

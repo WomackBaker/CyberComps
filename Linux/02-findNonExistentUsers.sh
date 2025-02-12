@@ -80,6 +80,8 @@ secure_chattr() {
     del -f /usr/sbin/chattr 2>/dev/null
 }
 
+echo "FINISHED"
+
 # Main script execution
 remove_unauthorized_users
 secure_home_directories
