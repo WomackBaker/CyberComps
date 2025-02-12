@@ -6,7 +6,7 @@ ip_pattern='([0-9]{1,3}[.]){3}[0-9]{1,3}'
 
 possible_backdoors() {
     local file=$1
-    if awk -v cmd="$cmd_pattern" -v ip="$ip_pattern" '$0 ~ cmd && $0 ~ ip { found=1; exit } END { if (found) print FILENAME " contains suspicious patterns." }' "$file"; then
+    if awk -v cmd="$cmd_pattern" -v ip="$ip_pattern" '$0 $HOME cmd && $0 $HOME ip { found=1; exit } END { if (found) print FILENAME " contains suspicious patterns." }' "$file"; then
         :
     fi
 }

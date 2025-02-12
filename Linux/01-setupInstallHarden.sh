@@ -22,7 +22,7 @@ for port in "$@"; do
 done
 
 read -r -p "Do you want to proceed with the above ports? (y/n): " response
-if [[ "$response" =~ ^[Yy]$ ]]; then
+if [[ "$response" =$HOME ^[Yy]$ ]]; then
     echo "Proceeding with the setup..."
 else
     echo "Aborting."
@@ -65,7 +65,6 @@ elif [ "$operatingSystem" = "centos" ] || [ "$operatingSystem" = "rocky" ] || [ 
 
     # Update
     sudo dnf update -y
-    # Some prefer to run both dnf and yum if symlinks differ, but typically dnf is enough
     sudo yum update -y || true  # Non-fatal if yum doesn't exist on some systems
 
     # For CentOS or Rocky, install EPEL:
@@ -127,19 +126,53 @@ echo "UFW has been configured and re-enabled."
 
 sudo ufw status verbose
 
+# Hash the shadow and passwd files, store them
 shadow_hash=$(sha256sum /etc/shadow | awk '{ print $1 }')
 passwd_hash=$(sha256sum /etc/passwd | awk '{ print $1 }')
 
-echo "shadow_hash: $shadow_hash" >> ./linux-utility/hashes.txt
-echo "passwd_hash: $passwd_hash" >> ./linux-utility/hashes.txt
+mkdir -p $HOME/Linux/linux-utility 2>/dev/null
+echo "shadow_hash: $shadow_hash" >> $HOME/Linux/linux-utility/hashes.txt
+echo "passwd_hash: $passwd_hash" >> $HOME/Linux/linux-utility/hashes.txt
 
 systemctl list-units --type=service --state=running --no-legend --no-pager \
   | awk '{print $1}' \
-  >> ./linux-utility/services.txt
+  >> $HOME/Linux/linux-utility/services.txt
 
-### FOR DOCKER ONLY ###
-#service --status-all 2>/dev/null | grep '\[ + \]' | awk '{print $4}' >> ./linux-utility/services.txt
+##################################
+# Ensure /etc/passwd & /etc/shadow
+# have correct permissions
+##################################
+echo "Ensuring /etc/passwd and /etc/shadow have correct ownership and permissions..."
+chown root:root /etc/passwd
+chmod 644 /etc/passwd
 
+chown root:root /etc/shadow
+chmod 600 /etc/shadow
 
+##################################
+# Remove the 'NOPASSWD:' token 
+# from sudoers (instead of commenting or deleting the line)
+##################################
+echo "Checking for any NOPASSWD entries in sudoers..."
+
+# List of sudoers files to scan
+sudoers_files=(/etc/sudoers)
+# Append /etc/sudoers.d/* if it exists and is not empty
+if [ -d /etc/sudoers.d ]; then
+  sudoers_files+=(/etc/sudoers.d/*)
+fi
+
+for file in "${sudoers_files[@]}"; do
+  # Skip if it's not a regular file
+  [ -f "$file" ] || continue
+  
+  if grep -Eq '^[^#]*NOPASSWD:' "$file"; then
+    echo "Found NOPASSWD in $file. Removing it..."
+    # Remove the literal 'NOPASSWD:' plus any trailing whitespace, but keep the rest of the line
+    sed -i 's/NOPASSWD:[[:space:]]*//g' "$file"
+  else
+    echo "No active NOPASSWD lines found in $file."
+  fi
+done
 
 echo "********* DONE ************"

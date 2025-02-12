@@ -12,7 +12,7 @@
 # -----------------------------
 
 # Path to the exclude file
-EXCLUDE_FILE="exclude.txt"
+EXCLUDE_FILE="$HOME/Linux/exclude.txt"  # changed $HOME to $HOME for proper expansion
 
 # Typical "no-login" shells on many systems:
 noLoginShells=(
@@ -46,7 +46,7 @@ if [[ -f "$EXCLUDE_FILE" ]]; then
   # Read each line of EXCLUDE_FILE into the excludedUsers array
   while IFS= read -r line; do
     # Skip empty lines or lines starting with #
-    [[ -z "$line" || "$line" =~ ^# ]] && continue
+    [[ -z "$line" || "$line" =$HOME ^# ]] && continue
     excludedUsers+=("$line")
   done < "$EXCLUDE_FILE"
 else
@@ -96,6 +96,7 @@ fi
 declare -A userPasswords  # Associative array to store user->generated_password
 
 $userListCmd | while IFS=: read -r username _ uid gid fullname home shell; do
+
   # 6.1 Check if user is in excluded list
   if printf '%s\n' "${excludedUsers[@]}" | grep -qx "$username"; then
     # Found in excluded list; skip this user
@@ -110,9 +111,14 @@ $userListCmd | while IFS=: read -r username _ uid gid fullname home shell; do
     fi
   done
 
-  # 6.3 (Optional) Skip system/daemon accounts with UID < 1000
-  #    Uncomment the below lines if you want to skip system accounts
-  # if [ "$uid" -lt 1000 ]; then
+  # 6.3 Skip system/daemon accounts with UID < 1000
+  if [ "$uid" -lt 1000 ]; then
+    continue
+  fi
+
+  # (Optional) If you also want to skip users with very large UIDs (like nobody at 65534),
+  # you can do something like:
+  # if [ "$uid" -gt 60000 ]; then
   #   continue
   # fi
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 
-USER_FILE="/root/Linux/user_list.txt"
-EXCLUDE_FILE="/root/Linux/exclude.txt"
+USER_FILE="$HOME/Linux/user_list.txt"
+EXCLUDE_FILE="$HOME/Linux/exclude.txt"
 
 while true; do
 
@@ -29,7 +29,7 @@ while true; do
     IFS=' ' read -r -a normalUsers <<< "${lines[1]}"
 
     # Always keep root in the admin group (if not already listed)
-    if [[ ! " ${administratorGroup[*]} " =~ " root " ]]; then
+    if [[ ! " ${administratorGroup[*]} " =$HOME " root " ]]; then
         administratorGroup+=("root")
     fi
 
@@ -44,7 +44,7 @@ while true; do
     if [[ -f "$EXCLUDE_FILE" ]]; then
         # Read each line, skip if line is empty or begins with #
         while IFS= read -r line; do
-            [[ -z "$line" || "$line" =~ ^# ]] && continue
+            [[ -z "$line" || "$line" =$HOME ^# ]] && continue
             excludeUsers+=( "$line" )
         done < "$EXCLUDE_FILE"
     else

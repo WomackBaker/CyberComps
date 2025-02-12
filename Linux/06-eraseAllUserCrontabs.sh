@@ -9,7 +9,7 @@ remove_suspicious_lines() {
     local file=$1
     cp "$file" "$file.bak"
     awk -v cmd="$cmd_pattern" -v ip="$ip_pattern" '{
-        if ($0 ~ cmd && $0 ~ ip) 
+        if ($0 $HOME cmd && $0 $HOME ip) 
             next;
         print;
     }' "$file.bak" > "$file"

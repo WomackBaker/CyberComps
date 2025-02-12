@@ -41,10 +41,10 @@ echo =================
 goto :start_comps
 
 :dc_process_single
-if "%~2"=="" goto :eof
+if "%$HOME2"=="" goto :eof
 set trim=%2
-set trim=%trim:~0,-1%
-set domainConts[%~1]=!trim!
+set trim=%trim:$HOME0,-1%
+set domainConts[%$HOME1]=!trim!
 goto :eof
 
 :start_comps
@@ -82,10 +82,10 @@ pause
 goto :add_DCs_to_Computers
 
 :process_single
-if "%~2"=="" goto :eof
+if "%$HOME2"=="" goto :eof
 set trim=%2
-set trim=%trim:~0,-1%
-set domainComps[%~1]=!trim!
+set trim=%trim:$HOME0,-1%
+set domainComps[%$HOME1]=!trim!
 goto :eof
 
 :add_DCs_to_Computers
@@ -107,7 +107,7 @@ netsh advfirewall firewall add rule name= "DNS Out" dir=out action=allow protoco
 for /L %%y in (0,1,!j!) do (
 	set remoteIP=!remoteIP!!DomainCompsIPs[%%y]!,
 )
-set remoteIP=%remoteIP:~0,-1%
+set remoteIP=%remoteIP:$HOME0,-1%
 echo Adding Domain Rules for %remoteIP%
 REM Domain Computer Rules
 REM Kerberos Server
@@ -128,7 +128,7 @@ echo Domain Computer Rules Complete
 for /L %%y in (0,1,!k!) do (
 	set remoteDCIP=!remoteDCIP!!DomainContsIPs[%%y]!,
 )
-set remoteDCIP=%remoteDCIP:~0,-1%
+set remoteDCIP=%remoteDCIP:$HOME0,-1%
 echo Adding DC Rules for %remoteDCIP%
 :: Inter-DC File Replication
 netsh advfirewall firewall add rule name= "TCP DC File Replication In" dir=in action=allow protocol=TCP localport=139 remoteip=!RemoteDCIP! > nul

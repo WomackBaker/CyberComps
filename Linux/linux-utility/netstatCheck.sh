@@ -1,8 +1,8 @@
 #!/bin/bash
 
-NETSTAT_FILE="/root/Linux/linux-utility/netstat.txt"
-TEMP_FILE="/root/Linux/linux-utility/netstat_temp.txt"
-LOG_FILE="/root/Linux/script_log.txt"
+NETSTAT_FILE="$HOME/Linux/linux-utility/netstat.txt"
+TEMP_FILE="$HOME/Linux/linux-utility/netstat_temp.txt"
+LOG_FILE="$HOME/Linux/script_log.txt"
 
 # Function to extract process ID, port, and IP from netstat
 function get_netstat_info() {

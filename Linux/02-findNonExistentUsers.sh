@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Path to the text file containing user names
-USER_FILE="user_list.txt"
-EXCLUDE_FILE="exclude.txt"
+USER_FILE="$HOME/Linux/user_list.txt"
+EXCLUDE_FILE="$HOME/Linux/exclude.txt"
 
 valid_shells=(/bin/bash /bin/sh /usr/bin/zsh /usr/bin/fish)
 

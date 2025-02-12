@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-SERVICE_LIST_FILE="/root/Linux/linux-utility/services.txt"
-LOG_FILE="/root/Linux/script_log.txt"
+SERVICE_LIST_FILE="$HOME/Linux/linux-utility/services.txt"
+LOG_FILE="$HOME/Linux/script_log.txt"
 
 # If services.txt doesn't exist, exit
 if [[ ! -f "$SERVICE_LIST_FILE" ]]; then

@@ -19,7 +19,7 @@ Description=Run pkillBash script
 After=network.target
 
 [Service]
-ExecStart=/bin/bash /root/Linux/pkillBash.sh
+ExecStart=/bin/bash $HOME/Linux/pkillBash.sh
 Restart=always
 RestartSec=3
 
@@ -36,7 +36,7 @@ Description=Run ensureCorrectUsers script
 After=network.target
 
 [Service]
-ExecStart=/bin/bash /root/Linux/ensureCorrectUsers.sh
+ExecStart=/bin/bash $HOME/Linux/ensureCorrectUsers.sh
 Restart=always
 RestartSec=3
 
@@ -53,7 +53,7 @@ Description=Run hasher script
 After=network.target
 
 [Service]
-ExecStart=/bin/bash /root/Linux/linux-utility/hasher.sh $args
+ExecStart=/bin/bash $HOME/linux-utility/hasher.sh $args
 Restart=always
 RestartSec=3
 
@@ -73,7 +73,7 @@ Description=Kill unlisted services
 After=network.target
 
 [Service]
-ExecStart=/bin/bash /root/Linux/linux-utility/serviceCheck.sh
+ExecStart=/bin/bash $HOME/Linux/linux-utility/serviceCheck.sh
 Restart=always
 RestartSec=3
 
@@ -94,7 +94,7 @@ Description=Kill unlisted connections
 After=network.target
 
 [Service]
-ExecStart=/bin/bash /root/Linux/linux-utility/netstatCheck.sh
+ExecStart=/bin/bash $HOME/Linux/linux-utility/netstatCheck.sh
 Restart=always
 
 [Install]
