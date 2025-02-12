@@ -1,9 +1,12 @@
 #!/bin/bash
 
-# Setup by installing required programs like dependencies, git, fail2ban, and ufw, configure what is nessesary, and do some basic hardening.
-# Usage bash 1setupInstallHarde.sh <port1> <port2> (bash 1setupInstallHarde.sh 22 80 443 8080)
+# Setup by installing required programs like dependencies, git, fail2ban, and ufw, configure
+# what is necessary, and do some basic hardening.
+# Usage: bash 01-setupInstallHarden.sh <port1> <port2> ...
+# Example: bash 01-setupInstallHarden.sh 22 80 443 8080
+
 if [ $(whoami) != "root" ]; then
-    echo "Script must be run as root"
+    echo "Script must be run as root."
     exit 1
 fi
 
@@ -26,70 +29,81 @@ else
     exit 0
 fi
 
-./getAllUsers.sh
+# Example call to another script (if you need it)
+# ./getAllUsers.sh
 
-id_like_line=$(grep '^ID=' /etc/os-release)
-
-operatingSystem=$(echo $id_like_line | cut -d'=' -f2 | tr -d '"')
+# Grab the line starting with 'ID=' in /etc/os-release
+id_line=$(grep '^ID=' /etc/os-release)
+operatingSystem=$(echo "$id_line" | cut -d'=' -f2 | tr -d '"')
 
 if [ -z "$operatingSystem" ]; then
-    echo "The ID_LIKE line was not found or is empty."
+    echo "The ID= line was not found or is empty in /etc/os-release."
 else
-    echo "Operating System base: $operatingSystem"
+    echo "Detected ID (Operating System): $operatingSystem"
 fi
 
+#######################################
+# Debian/Ubuntu
+#######################################
 if [ "$operatingSystem" = "debian" ] || [ "$operatingSystem" = "ubuntu" ]; then
-    echo "$operatingSystem detected, using apt"
+    echo "Debian/Ubuntu-based system detected, using apt."
 
     sudo apt update -y
     sudo apt upgrade -y
-    sudo apt install rsyslog -y
-    sudo apt install git -y
-    sudo apt install socat -y
-    sudo apt install fail2ban -y
-    sudo apt install zip -y
-    sudo apt install net-tools -y
-    sudo apt install htop -y
-    sudo apt install e2fsprogs -y
+
+    sudo apt install -y rsyslog git socat fail2ban zip net-tools htop e2fsprogs ufw
+
+    # Enable and start fail2ban
     sudo systemctl enable fail2ban
     sudo systemctl start fail2ban
 
-    sudo apt install ufw -y
+#######################################
+# CentOS/Rocky/Fedora
+#######################################
+elif [ "$operatingSystem" = "centos" ] || [ "$operatingSystem" = "rocky" ] || [ "$operatingSystem" = "fedora" ]; then
+    echo "RHEL-based system detected ($operatingSystem). Using dnf/yum."
 
-elif [ "$operatingSystem" = "centos" ]; then
-    echo "CentOS detected, using yum"
+    # Update
     sudo dnf update -y
-    sudo yum update -y
-    sudo yum install -y epel-release
-    sudo yum install git -y
-    sudo yum install socat -y
-    sudo yum install fail2ban -y
-    sudo yum install zip -y
-    sudo yum install net-tools -y
-    sudo yum install htop -y
-    sudo yum install e2fsprogs -y
+    # Some prefer to run both dnf and yum if symlinks differ, but typically dnf is enough
+    sudo yum update -y || true  # Non-fatal if yum doesn't exist on some systems
+
+    # For CentOS or Rocky, install EPEL:
+    if [ "$operatingSystem" != "fedora" ]; then
+      sudo dnf install -y epel-release
+    fi
+
+    # Common packages across RHEL-based:
+    sudo dnf install -y git socat fail2ban zip net-tools htop e2fsprogs ufw
+
+    # Enable and start fail2ban
     sudo systemctl enable fail2ban
     sudo systemctl start fail2ban
 
-    sudo yum install ufw -y
+else
+    echo "Unsupported or unrecognized OS (ID=$operatingSystem)."
+    echo "Please extend the script or install packages manually."
+    exit 1
 fi
 
-############################## BACKUPS
+##############################
+# Create initial backups
+##############################
 echo "Creating backups..."
 sudo mkdir -p /backup/initial
 
-############################## BACKUP /etc
+# Backup /etc
 cp -r /etc /backup/initial/etc
-
-############################## BACKUP /home
+# Backup /home
 cp -r /home /backup/initial/home
-
-############################## BACKUP /bin
+# Backup /bin
 cp -r /bin /backup/initial/bin
-
-############################## BACKUP /usr/bin
+# Backup /usr/bin
 cp -r /usr/bin /backup/initial/usr/bin
 
+##############################
+# Set up UFW
+##############################
 echo "Setting up UFW..."
 echo "Disabling UFW temporarily for configuration..."
 sudo ufw disable
@@ -104,14 +118,28 @@ for port in "$@"; do
     sudo ufw allow "$port"
 done
 
+# Always allow 22 in case we need SSH
 sudo ufw allow 22
-echo "Opened up port 22 just in case you forgot"
+echo "Port 22 opened for SSH."
 
 sudo ufw --force enable
 echo "UFW has been configured and re-enabled."
 
 sudo ufw status verbose
 
-./linux-utility/createshashes.sh
+shadow_hash=$(sha256sum /etc/shadow | awk '{ print $1 }')
+passwd_hash=$(sha256sum /etc/passwd | awk '{ print $1 }')
+
+echo "shadow_hash: $shadow_hash" >> ./linux-utility/hashes.txt
+echo "passwd_hash: $passwd_hash" >> ./linux-utility/hashes.txt
+
+systemctl list-units --type=service --state=running --no-legend --no-pager \
+  | awk '{print $1}' \
+  >> ./linux-utility/services.txt
+
+### FOR DOCKER ONLY ###
+#service --status-all 2>/dev/null | grep '\[ + \]' | awk '{print $4}' >> ./linux-utility/services.txt
+
+
 
 echo "********* DONE ************"

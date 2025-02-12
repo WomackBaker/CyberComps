@@ -1,15 +1,18 @@
 #!/bin/bash
 
+# Update repositories and install Python 3 quietly (Debian/Ubuntu)
 apt-get update -y >/dev/null 2>&1
 apt-get install -y python3 >/dev/null 2>&1
 
-# Attempt installation on CentOS
+# Attempt installation on CentOS (won't harm Debian/Ubuntu if yum isn't present)
 yum install -y python3 >/dev/null 2>&1
 
 # Capture all arguments passed to the script
 args="$@"
 
-# Create systemd service file for pkillBash.sh
+############################
+# pkillBash.service
+############################
 cat <<EOF >/etc/systemd/system/pkillBash.service
 [Unit]
 Description=Run pkillBash script
@@ -24,14 +27,16 @@ RestartSec=3
 WantedBy=multi-user.target
 EOF
 
-# Modify the ExecStart line to include arguments for ensureCorrectUsers.sh
+############################
+# ensureCorrectUsers.service
+############################
 cat <<EOF >/etc/systemd/system/ensureCorrectUsers.service
 [Unit]
 Description=Run ensureCorrectUsers script
 After=network.target
 
 [Service]
-ExecStart=/bin/bash /root/Linux/ensureCorrectUsers.sh $args
+ExecStart=/bin/bash /root/Linux/ensureCorrectUsers.sh
 Restart=always
 RestartSec=3
 
@@ -39,7 +44,9 @@ RestartSec=3
 WantedBy=multi-user.target
 EOF
 
-# Modify the ExecStart line to include arguments for ensureCorrectUsers.sh
+############################
+# hasher.service
+############################
 cat <<EOF >/etc/systemd/system/hasher.service
 [Unit]
 Description=Run hasher script
@@ -54,17 +61,47 @@ RestartSec=3
 WantedBy=multi-user.target
 EOF
 
-# Reload systemd to recognize the new services
+############################
+# serviceCheck.service
+############################
+# NOTE: The script below uses relative paths for services.txt and script_log.txt.
+#       You can either place those files in /root/Linux (with the script),
+#       or adjust the WorkingDirectory and ExecStart accordingly.
+cat <<EOF >/etc/systemd/system/serviceCheck.service
+[Unit]
+Description=Kill unlisted services
+After=network.target
+
+[Service]
+ExecStart=/bin/bash /root/Linux/linux-utility/serviceCheck.sh
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# Reload systemd so it recognizes the new/updated service definitions
 systemctl daemon-reload
 
-# Enable and start the services
+# Enable and start pkillBash service
 systemctl enable pkillBash.service
 systemctl start pkillBash.service
+
+# Enable and start ensureCorrectUsers service
 systemctl enable ensureCorrectUsers.service
 systemctl start ensureCorrectUsers.service
+
+# Enable and start hasher service
 systemctl enable hasher.service
 systemctl start hasher.service
+
+# Enable and start killUnlistedServices service
+systemctl enable serviceCheck.service
+systemctl start serviceCheck.service
+
 # Optionally display the status of the services
-systemctl status ensureCorrectUsers.service
 systemctl status pkillBash.service
+systemctl status ensureCorrectUsers.service
 systemctl status hasher.service
+systemctl status serviceCheck.service
