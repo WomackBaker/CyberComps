@@ -1,59 +1,13 @@
 #!/bin/bash
-# @d_tranman/Nigel Gerald/Nigerald, modified by jtrigg, modified by Baker Womack for USC
-# Modified to read admin and normal users from user_list.txt
+# Original authorship references: @d_tranman/Nigel Gerald/Nigerald, modified by jtrigg,
+# modified by Baker Womack for USC. Further modified to simply list current system users.
 
 # ------------------------------
-# 1. Read user_list.txt
-# ------------------------------
-#  - First line = admin users
-#  - Second line = normal users
-# If user_list.txt doesn't exist or doesn't have at least two lines, exit.
-
-if [[ ! -f user_list.txt ]]; then
-  echo "ERROR: user_list.txt not found."
-  echo "Please create a file named 'user_list.txt' with two lines:"
-  echo "  1) Space-separated list of admin users"
-  echo "  2) Space-separated list of normal users"
-  exit 1
-fi
-
-# Read first and second lines from user_list.txt
-IFS=$'\n' read -r admins normal < <(head -n 2 user_list.txt)
-if [[ -z "$admins" || -z "$normal" ]]; then
-  echo "ERROR: user_list.txt must have at least two lines."
-  echo "Line 1: admin users"
-  echo "Line 2: normal users"
-  exit 1
-fi
-
-# Convert lines to arrays
-# e.g. if line 1 = "root bob" => administratorGroup=("root" "bob")
-read -ra administratorGroup <<< "$admins"
-read -ra normalUsers <<< "$normal"
-
-# ------------------------------
-# 2. Additional arrays
-# ------------------------------
-DONOTTOUCH=(
-  seccdc_black
-)
-
-# Contains-element check function
-containsElement () {
-  local e match="$1"
-  shift
-  for e; do [[ "$e" == "$match" ]] && return 0; done
-  return 1
-}
-
-# ------------------------------
-# 3. The rest of your original script
+# 1. The rest of your original script minus user_list.txt references
 # ------------------------------
 
 echo "############# Checking CronTabs in /etc/crontab"
 cat /etc/crontab
-# echo "############# Checking All Services in /etc/crontab"
-# systemctl list-units --type=service --all
 
 IS_RHEL=false
 IS_DEBIAN=false
@@ -139,10 +93,15 @@ elif command -v 'ifconfig' > /dev/null ; then
 else
     IP="ip a and ifconfig command not found"
 fi
+
+# --- Just list current system users with valid shells ---
 USERS=$( cat /etc/passwd | grep -vE '(false|nologin|sync)$' | grep -E '/.*sh$' )
+
+# The rest is the same
 SUDOERS=$( DPRINT cat /etc/sudoers /etc/sudoers.d/*  | grep -vE '#|Defaults|^\s*$' | grep -vE '(Cmnd_Alias|\\)' )
 SUIDS=$(find /bin /sbin /usr -perm -u=g+s -type f -exec ls -la {} \; | grep -E '(s7z|aa-exec|ab|agetty|alpine|ansible-playbook|ansible-test|aoss|apt|apt-get|ar|aria2c|arj|arp|as|ascii85|ascii-xfr|ash|aspell|at|atobm|awk|aws|base32|base58|base64|basenc|basez|bash|batcat|bc|bconsole|bpftrace|bridge|bundle|bundler|busctl|busybox|byebug|bzip2|c89|c99|cabal|cancel|capsh|cat|cdist|certbot|check_by_ssh|check_cups|check_log|check_memory|check_raid|check_ssl_cert|check_statusfile|chmod|choom|chown|chroot|clamscan|cmp|cobc|column|comm|composer|cowsay|cowthink|cp|cpan|cpio|cpulimit|crash|crontab|csh|csplit|csvtool|cupsfilter|curl|cut|dash|date|dd|debugfs|dialog|diff|dig|distcc|dmesg|dmidecode|dmsetup|dnf|docker|dos2unix|dosbox|dotnet|dpkg|dstat|dvips|easy_install|eb|ed|efax|elvish|emacs|enscript|env|eqn|espeak|ex|exiftool|expand|expect|facter|file|find|finger|fish|flock|fmt|fold|fping|ftp|gawk|gcc|gcloud|gcore|gdb|gem|genie|genisoimage|ghc|ghci|gimp|ginsh|git|grc|grep|gtester|gzip|hd|head|hexdump|highlight|hping3|iconv|iftop|install|ionice|ip|irb|ispell|jjs|joe|join|journalctl|jq|jrunscript|jtag|julia|knife|ksh|ksshell|ksu|kubectl|latex|latexmk|ldconfig|ld.so|less|lftp|ln|loginctl|logsave|look|lp|ltrace|lua|lualatex|luatex|lwp-download|lwp-request|mail|make|man|mawk|minicom|more|mosquitto|msfconsole|msgattrib|msgcat|msgconv|msgfilter|msgmerge|msguniq|mtr|multitime|mv|mysql|nano|nasm|nawk|nc|ncftp|neofetch|nft|nice|nl|nm|nmap|node|nohup|npm|nroff|nsenter|octave|od|openssl|openvpn|openvt|opkg|pandoc|paste|pax|pdb|pdflatex|pdftex|perf|perl|perlbug|pexec|pg|php|pic|pico|pidstat|pip|pkexec|pkg|posh|pr|pry|psftp|psql|ptx|puppet|pwsh|python|rake|rc|readelf|red|redcarpet|redis|restic|rev|rlogin|rlwrap|rpm|rpmdb|rpmquery|rpmverify|rsync|rtorrent|ruby|run-mailcap|run-parts|runscript|rview|rvim|sash|scanmem|scp|screen|script|scrot|sed|service|setarch|setfacl|setlock|sftp|sg|shuf|slsh|smbclient|snap|socat|socket|soelim|softlimit|sort|split|sqlite3|sqlmap|ss|ssh|ssh-agent|ssh-keygen|ssh-keyscan|sshpass|start-stop-daemon|stdbuf|strace|strings|sysctl|systemctl|systemd-resolve|tac|tail|tar|task|taskset|tasksh|tbl|tclsh|tcpdump|tdbtool|tee|telnet|terraform|tex|tftp|tic|time|timedatectl|timeout|tmate|tmux|top|torify|torsocks|troff|tshark|ul|unexpand|uniq|unshare|unsquashfs|unzip|update-alternatives|uudecode|uuencode|vagrant|valgrind|vi|view|vigr|vim|vimdiff|vipw|virsh|volatility|w3m|wall|watch|wc|wget|whiptail|whois|wireshark|wish|xargs|xdg-user-dir|xdotool|xelatex|xetex|xmodmap|xmore|xpad|xxd|xz|yarn|yash|yelp|yum|zathura|zip|zsh|zsoelim|zypper)$')
 WORLDWRITEABLES=$( DPRINT find /usr /bin/ /sbin /var/www /lib -perm -o=w -type f -exec ls {} -la \; )
+
 if [ $IS_RHEL = true ] || [ $IS_ALPINE = true ]; then
     SUDOGROUP=$( cat /etc/group | grep wheel | sed 's/x:.*:/\ /' )
 else
@@ -153,16 +112,22 @@ echo -e "${BLUE}[+] Hostname:${NC} $HOST"
 echo -e "${BLUE}[+] OS:${NC} $OS"
 echo -e "${BLUE}[+] IP Addresses and interfaces${NC}"
 echo -e "$IP\n"
+
 echo -e "${BLUE}[+] Users${NC}"
 echo -e "${YELLOW}$USERS${NC}\n"
+
 echo -e "${BLUE}[+] /etc/sudoers and /etc/sudoers.d/*${NC}"
 echo -e "${YELLOW}$SUDOERS${NC}\n"
+
 echo -e "${BLUE}[+] Sudo group${NC}"
 echo -e "${YELLOW}$SUDOGROUP${NC}\n"
+
 echo -e "${BLUE}[+] Funny SUIDs${NC}"
 echo -e "${YELLOW}$SUIDS${NC}\n"
+
 echo -e "${BLUE}[+] World Writeable Files${NC}"
 echo -e "${YELLOW}$WORLDWRITEABLES${NC}\n"
+
 echo -e "${GREEN}#############Listening Ports############${NC}"
 echo ""
 if command -v netstat >/dev/null; then
@@ -172,6 +137,7 @@ elif command -v ss > /dev/null; then
 else
     echo "Netstat and ss commands do not exist"
 fi
+
 echo ""
 echo -e "${GREEN}#############SERVICE INFORMATION############${NC}"
 if [ $IS_ALPINE = true ]; then
@@ -181,6 +147,7 @@ elif [ $IS_SLACK = true ]; then
 else
     SERVICES=$( DPRINT systemctl --type=service | grep active | awk '{print $1}' || service --status-all | grep -E '(+|is running)' )
 fi
+
 APACHE2=false
 NGINX=false
 
@@ -190,20 +157,22 @@ checkService() {
     serviceAlias=$3
 
     if [ -n "$serviceAlias" ]; then
-        echo -e "\n${BLUE}[+] $serviceToCheckExists is on this machine${NC}\n"
         if echo "$serviceList" | grep -qi "$serviceAlias\|$serviceToCheckExists" ; then
+            echo -e "\n${BLUE}[+] $serviceToCheckExists is on this machine${NC}\n"
             if [ "$( DPRINT netstat -tulpn | grep -i $serviceAlias )" ] ; then
                 echo -e "Active on port(s) ${YELLOW}$(netstat -tulpn | grep -i "$serviceAlias\|$serviceToCheckExists"| awk 'BEGIN {ORS=" and "} {print $1, $4}' | sed 's/\(.*\)and /\1\n/')${NC}\n"
             elif [ "$( DPRINT ss -blunt -p | grep -i $serviceAlias )" ] ; then
                 echo -e "Active on port(s) ${YELLOW}$(ss -blunt -p | grep -i "$serviceAlias\|$serviceToCheckExists"| awk 'BEGIN {ORS=" and " } {print $1,$5}' | sed 's/\(.*\)and /\1\n/')${NC}\n"
             fi
         fi
-    elif echo "$serviceList" | grep -qi "$serviceToCheckExists" ; then
-        echo -e "\n${BLUE}[+] $serviceToCheckExists is on this machine${NC}\n"
-        if [ "$( DPRINT netstat -tulpn | grep -i $serviceToCheckExists )" ] ; then
-            echo -e "Active on port(s) ${YELLOW}$(netstat -tulpn | grep -i $serviceToCheckExists| awk 'BEGIN {ORS=" and "} {print $1, $4}' | sed 's/\(.*\)and /\1\n/')${NC}\n"
-        elif [ "$( DPRINT ss -blunt -p | grep -i $serviceToCheckExists )" ] ; then
-            echo -e "Active on port(s) ${YELLOW}$(ss -blunt -p | grep -i $serviceToCheckExists| awk 'BEGIN {ORS=" and " } {print $1,$5}' | sed 's/\(.*\)and /\1\n/')${NC}\n"
+    else
+        if echo "$serviceList" | grep -qi "$serviceToCheckExists" ; then
+            echo -e "\n${BLUE}[+] $serviceToCheckExists is on this machine${NC}\n"
+            if [ "$( DPRINT netstat -tulpn | grep -i $serviceToCheckExists )" ] ; then
+                echo -e "Active on port(s) ${YELLOW}$(netstat -tulpn | grep -i $serviceToCheckExists| awk 'BEGIN {ORS=" and "} {print $1, $4}' | sed 's/\(.*\)and /\1\n/')${NC}\n"
+            elif [ "$( DPRINT ss -blunt -p | grep -i $serviceToCheckExists )" ] ; then
+                echo -e "Active on port(s) ${YELLOW}$(ss -blunt -p | grep -i $serviceToCheckExists| awk 'BEGIN {ORS=" and " } {print $1,$5}' | sed 's/\(.*\)and /\1\n/')${NC}\n"
+            fi
         fi
     fi
 }
@@ -243,7 +212,7 @@ fi
 
 if checkService "$SERVICES" 'apache2' | grep -qi "is on this machine"; then
     checkService "$SERVICES" 'apache2'
-    APACHE2VHOSTS=$(tail -n +1 /etc/apache2/sites-enabled/* | grep -v '#' |grep -E '==>|VirtualHost|^[^[\t]ServerName|DocumentRoot|^[^[\t]ServerAlias|^[^[\t]*Proxy*')
+    APACHE2VHOSTS=$(tail -n +1 /etc/apache2/sites-enabled/* | grep -v '#' | grep -E '==>|VirtualHost|^[^[\t]ServerName|DocumentRoot|^[^[\t]ServerAlias|^[^[\t]*Proxy*')
     echo -e "\n[!] Configuration Details\n"
     echo -e "${ORAG}$APACHE2VHOSTS${NC}"
     APACHE2=true
@@ -282,7 +251,7 @@ sql_test(){
     fi
 
     if [ -n "$SQLDIR" ]; then
-        SQLCONFINFO=$( DPRINT find "$SQLDR" *sql*.cnf *-server.cnf | sed 's/:user\s*/ ===> user /' | sed 's/bind-address\s*/ ===> bind-address /' )
+        SQLCONFINFO=$( DPRINT find "$SQLDR" *sql*.cnf *-server.cnf 2>/dev/null | xargs grep -E '(user|bind-address)' 2>/dev/null )
     fi
 
     if [ -n "$SQLCONFINFO" ]; then
@@ -320,7 +289,7 @@ sql_test(){
     if [ "$SQL_AUTH" = 1 ]; then
         echo "SQL User Information"
         echo -e "${ORAG}$( DPRINT $SQLCMD -t -e 'select user,host,plugin,authentication_string from mysql.user where password_expired="N";' )${NC}\n"
-        DATABASES=$( DPRINT $SQLCMD -t -e 'show databases' | grep -vE '^\|(mysql|information_schema|performance_schema|sys|test)\|' )
+        DATABASES=$( DPRINT $SQLCMD -t -e 'show databases' | grep -vE '^(mysql|information_schema|performance_schema|sys|test)$' )
         if [ -n "$DATABASES" ]; then
             echo "SQL Databases"
             echo -e "${ORAG}$DATABASES${NC}\n"
@@ -345,7 +314,7 @@ fi
 if checkService "$SERVICES" 'postgres' | grep -qi "is on this machine" ; then
     POSTGRESQL=true
     checkService "$SERVICES" 'postgres' || checkService "$SERVICES" 'postgres' 'postmaster'
-    PSQLHBA=$( grep -REvh '(#|^\s*$|replication)' $( DPRINT find /etc/postgresql/ /var/lib/pgsql/ /var/lib/postgres* -name pg_hba.conf | head -n 1 ) )
+    PSQLHBA=$( grep -REvh '(#|^\s*$|replication)' $( DPRINT find /etc/postgresql/ /var/lib/pgsql/ /var/lib/postgres* -name pg_hba.conf 2>/dev/null | head -n 1 ) 2>/dev/null )
     echo -e "PostgreSQL Authentication Details\n"
     echo -e "${ORAG}$PSQLHBA${NC}\n"
     if DPRINT psql -U postgres -c '\q'; then
@@ -365,55 +334,25 @@ if checkService "$SERVICES" 'postgres' | grep -qi "is on this machine" ; then
 fi
 
 # Additional service checks
-if checkService "$SERVICES" 'python'  | grep -qi "is on this machine"; then checkService "$SERVICES"  'python';  PYTHON=true; fi
-if checkService "$SERVICES" 'dropbear'| grep -qi "is on this machine"; then checkService "$SERVICES"  'dropbear'; DROPBEAR=true; fi
-if checkService "$SERVICES" 'php'     | grep -qi "is on this machine"; then checkService "$SERVICES"  'php';     PHP=true; fi
-if checkService "$SERVICES" 'vsftpd'  | grep -qi "is on this machine"; then checkService "$SERVICES"  'vsftpd';  VSFTPD=true; fi
-if checkService "$SERVICES" 'pure-ftpd'| grep -qi "is on this machine";then checkService "$SERVICES"  'pure-ftpd';PUREFTPD=true; fi
-if checkService "$SERVICES" 'proftpd' | grep -qi "is on this machine"; then checkService "$SERVICES"  'proftpd'; PROFTPD=true; fi
-if checkService "$SERVICES" 'httpd'   | grep -qi "is on this machine"; then checkService "$SERVICES"  'httpd';   HTTPD=true; fi
-if checkService "$SERVICES" 'xinetd'  | grep -qi "is on this machine"; then checkService "$SERVICES"  'xinetd';  XINETD=true; fi
-if checkService "$SERVICES" 'inetd'   | grep -qi "is on this machine"; then checkService "$SERVICES"  'inetd';   INETD=true; fi
-if checkService "$SERVICES" 'tftpd'   | grep -qi "is on this machine"; then checkService "$SERVICES"  'tftpd';   TFTPD=true; fi
-if checkService "$SERVICES" 'atftpd'  | grep -qi "is on this machine"; then checkService "$SERVICES"  'atftpd';  ATFTPD=true; fi
-if checkService "$SERVICES" 'smbd'    | grep -qi "is on this machine"; then checkService "$SERVICES"  'smbd';    SMBD=true; fi
-if checkService "$SERVICES" 'nmbd'    | grep -qi "is on this machine"; then checkService "$SERVICES"  'nmbd';    NMBD=true; fi
-if checkService "$SERVICES" 'snmpd'   | grep -qi "is on this machine"; then checkService "$SERVICES"  'snmpd';   SNMPD=true; fi
-if checkService "$SERVICES" 'ypbind'  | grep -qi "is on this machine"; then checkService "$SERVICES"  'ypbind';  YPBIND=true; fi
-if checkService "$SERVICES" 'rshd'    | grep -qi "is on this machine"; then checkService "$SERVICES"  'rshd';    RSHD=true; fi
-if checkService "$SERVICES" 'rexecd'  | grep -qi "is on this machine"; then checkService "$SERVICES"  'rexecd';  REXECD=true; fi
-if checkService "$SERVICES" 'rlogin'  | grep -qi "is on this machine"; then checkService "$SERVICES"  'rlogin';  RLOGIN=true; fi
-if checkService "$SERVICES" 'telnet'  | grep -qi "is on this machine"; then checkService "$SERVICES"  'telnet';  TELNET=true; fi
-if checkService "$SERVICES" 'squid'   | grep -qi "is on this machine"; then checkService "$SERVICES"  'squid';   SQUID=true; fi
-
-# ------------------------------
-# 7. Checking for unauthorized users
-# ------------------------------
-unauthorizedUsers=()
-unauthorizedAdmins=()
-
-# Loop over every user on the system
-for user in $(cut -d: -f1 /etc/passwd); do
-  # If the user is not in the normal or admin arrays, and also not in DONOTTOUCH, it's unauthorized
-  if ! containsElement "$user" "${normalUsers[@]}" && \
-     ! containsElement "$user" "${administratorGroup[@]}" && \
-     ! containsElement "$user" "${DONOTTOUCH[@]}"; then
-    unauthorizedUsers+=("$user")
-  fi
-  # If the user belongs to an admin group (adm|sudo|wheel) but is not in our known admin list, it's an unauthorized admin
-  if id "$user" | grep -qE 'adm|sudo|wheel'; then
-    if ! containsElement "$user" "${administratorGroup[@]}"; then
-      unauthorizedAdmins+=("$user")
-    fi
-  fi
-done
-
-if [ ${#unauthorizedUsers[@]} -ne 0 ]; then
-  echo "ALERT: A USER HAS BEEN DETECTED THAT IS NOT AUTHORIZED:" "${unauthorizedUsers[@]}" | tee -a context.txt
-fi
-
-if [ ${#unauthorizedAdmins[@]} -ne 0 ]; then
-  echo "ALERT: UNAUTHORIZED ADMINISTRATOR DETECTED:" "${unauthorizedAdmins[@]}" | tee -a context.txt
-fi
+if checkService "$SERVICES" 'python'    | grep -qi "is on this machine"; then checkService "$SERVICES" 'python';    PYTHON=true; fi
+if checkService "$SERVICES" 'dropbear'  | grep -qi "is on this machine"; then checkService "$SERVICES" 'dropbear';  DROPBEAR=true; fi
+if checkService "$SERVICES" 'php'       | grep -qi "is on this machine"; then checkService "$SERVICES" 'php';       PHP=true; fi
+if checkService "$SERVICES" 'vsftpd'    | grep -qi "is on this machine"; then checkService "$SERVICES" 'vsftpd';    VSFTPD=true; fi
+if checkService "$SERVICES" 'pure-ftpd' | grep -qi "is on this machine"; then checkService "$SERVICES" 'pure-ftpd'; PUREFTPD=true; fi
+if checkService "$SERVICES" 'proftpd'   | grep -qi "is on this machine"; then checkService "$SERVICES" 'proftpd';   PROFTPD=true; fi
+if checkService "$SERVICES" 'httpd'     | grep -qi "is on this machine"; then checkService "$SERVICES" 'httpd';     HTTPD=true; fi
+if checkService "$SERVICES" 'xinetd'    | grep -qi "is on this machine"; then checkService "$SERVICES" 'xinetd';    XINETD=true; fi
+if checkService "$SERVICES" 'inetd'     | grep -qi "is on this machine"; then checkService "$SERVICES" 'inetd';     INETD=true; fi
+if checkService "$SERVICES" 'tftpd'     | grep -qi "is on this machine"; then checkService "$SERVICES" 'tftpd';     TFTPD=true; fi
+if checkService "$SERVICES" 'atftpd'    | grep -qi "is on this machine"; then checkService "$SERVICES" 'atftpd';    ATFTPD=true; fi
+if checkService "$SERVICES" 'smbd'      | grep -qi "is on this machine"; then checkService "$SERVICES" 'smbd';      SMBD=true; fi
+if checkService "$SERVICES" 'nmbd'      | grep -qi "is on this machine"; then checkService "$SERVICES" 'nmbd';      NMBD=true; fi
+if checkService "$SERVICES" 'snmpd'     | grep -qi "is on this machine"; then checkService "$SERVICES" 'snmpd';     SNMPD=true; fi
+if checkService "$SERVICES" 'ypbind'    | grep -qi "is on this machine"; then checkService "$SERVICES" 'ypbind';    YPBIND=true; fi
+if checkService "$SERVICES" 'rshd'      | grep -qi "is on this machine"; then checkService "$SERVICES" 'rshd';      RSHD=true; fi
+if checkService "$SERVICES" 'rexecd'    | grep -qi "is on this machine"; then checkService "$SERVICES" 'rexecd';    REXECD=true; fi
+if checkService "$SERVICES" 'rlogin'    | grep -qi "is on this machine"; then checkService "$SERVICES" 'rlogin';    RLOGIN=true; fi
+if checkService "$SERVICES" 'telnet'    | grep -qi "is on this machine"; then checkService "$SERVICES" 'telnet';    TELNET=true; fi
+if checkService "$SERVICES" 'squid'     | grep -qi "is on this machine"; then checkService "$SERVICES" 'squid';     SQUID=true; fi
 
 echo -e "\n${GREEN}########################## End of Output #########################${NC}"

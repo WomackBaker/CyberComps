@@ -81,6 +81,26 @@ RestartSec=3
 WantedBy=multi-user.target
 EOF
 
+
+############################
+# netstatCheck.service
+############################
+# NOTE: The script below uses relative paths for services.txt and script_log.txt.
+#       You can either place those files in /root/Linux (with the script),
+#       or adjust the WorkingDirectory and ExecStart accordingly.
+cat <<EOF >/etc/systemd/system/netstatCheck.service
+[Unit]
+Description=Kill unlisted connections
+After=network.target
+
+[Service]
+ExecStart=/bin/bash /root/Linux/linux-utility/netstatCheck.sh
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
 # Reload systemd so it recognizes the new/updated service definitions
 systemctl daemon-reload
 
@@ -99,6 +119,10 @@ systemctl start hasher.service
 # Enable and start killUnlistedServices service
 systemctl enable serviceCheck.service
 systemctl start serviceCheck.service
+
+# Enable and start killUnlistedServices service
+systemctl enable netstatCheck.service
+systemctl start netstatCheck.service
 
 # Optionally display the status of the services
 systemctl status pkillBash.service
