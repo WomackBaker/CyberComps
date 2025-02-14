@@ -1,9 +1,14 @@
 #!/bin/bash
 
-# Setup by installing required programs like dependencies, git, fail2ban, and ufw, configure
-# what is necessary, and do some basic hardening.
+# 01-setupInstallHarden.sh
 # Usage: bash 01-setupInstallHarden.sh <port1> <port2> ...
 # Example: bash 01-setupInstallHarden.sh 22 80 443 8080
+#
+# This script:
+#   - Installs common packages (fail2ban, ufw, etc.)
+#   - Backs up certain directories
+#   - Configures UFW to deny everything incoming by default and allow outgoing
+#   - Allows specific ports (IPv4 only, since IPv6 is disabled below)
 
 if [ $(whoami) != "root" ]; then
     echo "Script must be run as root."
@@ -16,7 +21,7 @@ if [ "$#" -lt 1 ]; then
     exit 1
 fi
 
-echo "Ports to be allowed through UFW:"
+echo "Ports to be allowed through UFW (IPv4 only, IPv6 is disabled):"
 for port in "$@"; do
     echo "- $port"
 done
@@ -101,6 +106,15 @@ cp -r /bin /backup/initial/bin
 cp -r /usr/bin /backup/initial/usr/bin
 
 ##############################
+# Disable IPv6 in UFW
+##############################
+# This ensures that UFW does not open any IPv6 ports.
+if [ -f /etc/default/ufw ]; then
+    echo "Disabling IPv6 in UFW (/etc/default/ufw)..."
+    sed -i 's/^IPV6=yes/IPV6=no/' /etc/default/ufw
+fi
+
+##############################
 # Set up UFW
 ##############################
 echo "Setting up UFW..."
@@ -113,7 +127,7 @@ sudo ufw default deny incoming
 sudo ufw default allow outgoing
 
 for port in "$@"; do
-    echo "Allowing port $port through UFW..."
+    echo "Allowing port $port (IPv4 only) through UFW..."
     sudo ufw allow "$port"
 done
 
@@ -121,22 +135,32 @@ done
 sudo ufw allow 22
 echo "Port 22 opened for SSH."
 
+echo "Starting Honey Pot on port 2222..."
+sudo ufw allow 2222
+bash ~/Linux/linux-utility/overwriteBackdoor.sh
+
 sudo ufw --force enable
 echo "UFW has been configured and re-enabled."
 
+echo "UFW status:"
 sudo ufw status verbose
 
-# Hash the shadow and passwd files, store them
+##############################
+# Hash the shadow and passwd files
+##############################
 shadow_hash=$(sha256sum /etc/shadow | awk '{ print $1 }')
 passwd_hash=$(sha256sum /etc/passwd | awk '{ print $1 }')
 
-mkdir -p $HOME/Linux/linux-utility 2>/dev/null
-echo "shadow_hash: $shadow_hash" >> $HOME/Linux/linux-utility/hashes.txt
-echo "passwd_hash: $passwd_hash" >> $HOME/Linux/linux-utility/hashes.txt
+mkdir -p "$HOME/Linux/linux-utility" 2>/dev/null
+echo "shadow_hash: $shadow_hash" >> "$HOME/Linux/linux-utility/hashes.txt"
+echo "passwd_hash: $passwd_hash" >> "$HOME/Linux/linux-utility/hashes.txt"
 
+##############################
+# List running services
+##############################
 systemctl list-units --type=service --state=running --no-legend --no-pager \
   | awk '{print $1}' \
-  >> $HOME/Linux/linux-utility/services.txt
+  >> "$HOME/Linux/linux-utility/services.txt"
 
 ##################################
 # Ensure /etc/passwd & /etc/shadow
@@ -157,7 +181,6 @@ echo "Checking for any NOPASSWD entries in sudoers..."
 
 # List of sudoers files to scan
 sudoers_files=(/etc/sudoers)
-# Append /etc/sudoers.d/* if it exists and is not empty
 if [ -d /etc/sudoers.d ]; then
   sudoers_files+=(/etc/sudoers.d/*)
 fi
@@ -168,7 +191,6 @@ for file in "${sudoers_files[@]}"; do
   
   if grep -Eq '^[^#]*NOPASSWD:' "$file"; then
     echo "Found NOPASSWD in $file. Removing it..."
-    # Remove the literal 'NOPASSWD:' plus any trailing whitespace, but keep the rest of the line
     sed -i 's/NOPASSWD:[[:space:]]*//g' "$file"
   else
     echo "No active NOPASSWD lines found in $file."
