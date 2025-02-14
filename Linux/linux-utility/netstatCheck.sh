@@ -7,7 +7,7 @@ LOG_FILE="/root/Linux/script_log.txt"
 # Function to extract process ID, port, and IP from netstat
 function get_netstat_info() {
     # Get LISTEN and ESTABLISHED connections with process IDs
-    netstat -tunp 2>/dev/null | awk 'NR>2 {print $5, $7}' | grep -v "0.0.0.0\|::" | sort | uniq
+    netstat -tunlp 2>/dev/null | awk 'NR>2 {print $4, $5, $7}' | sort | uniq
 }
 
 # Ensure netstat.txt exists

@@ -14,8 +14,7 @@ stored_shadow_hash="$(awk -F': ' '/^shadow_hash:/{print $2}' $HOME/Linux/linux-u
 # 3. Compare them
 if [[ "$current_passwd_hash" == "$stored_passwd_hash" && \
       "$current_shadow_hash" == "$stored_shadow_hash" ]]; then
-    echo "The /etc/passwd and /etc/shadow hashes match the stored values."
 else
-    echo "The /etc/passwd and /etc/shadow hashes DO NOT match the stored values."
-    echo "**ALERT PASSWORD CHANGED** - $(date)" >> $HOME/Linux/script_log.txt
+    echo "ALERT PASSWORD CHANGED"
+    echo "$(date): ALERT PASSWORD CHANGED" >> $HOME/Linux/script_log.txt
 fi

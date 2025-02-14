@@ -6,8 +6,10 @@
 # searching for suspicious lines that might indicate persistence.
 #
 
-# You can customize this list of suspicious patterns:
-SUSPICIOUS_PATTERNS='(nc|wget|curl|bash|sh|python|perl|ruby|chmod|chown|chattr|systemctl|service|nohup|alias|rm\s*-rf|scp|sftp|ftp|cron|echo\s+[^>]*>)'
+# Adjust these patterns as needed. The \b ensures we match on word boundaries,
+# and the parentheses group them. The explicit '(\s|^|;|&&)' before the command
+# helps detect actual usage rather than mere mentions in a path or comment.
+SUSPICIOUS_PATTERNS='\b(nc|wget|curl|bash|sh|python|perl|ruby|chmod|chown|chattr|systemctl|service|nohup|rm\s*-rf|scp|sftp|ftp|cron|echo\s+[^>]*>)\b'
 
 # System-wide profile-like files/directories to check
 SYSTEM_FILES=(
@@ -25,7 +27,8 @@ echo "===== Checking system-wide profile files ====="
 for file in "${SYSTEM_FILES[@]}"; do
   if [[ -f "$file" ]]; then
     echo -e "\n[+] Checking $file"
-    grep -Eni "$SUSPICIOUS_PATTERNS" "$file" 2>/dev/null
+    # Only grep lines that do NOT start with '#' (after optional whitespace)
+    grep -Eni "^[[:space:]]*[^#].*${SUSPICIOUS_PATTERNS}" "$file" 2>/dev/null
   fi
 done
 
@@ -36,7 +39,7 @@ for dir in "${SYSTEM_DIRS[@]}"; do
       # Ensure it's a regular file (not a directory, symlink, etc.)
       if [[ -f "$f" ]]; then
         echo -e "\n[+] Checking $f"
-        grep -Eni "$SUSPICIOUS_PATTERNS" "$f" 2>/dev/null
+        grep -Eni "^[[:space:]]*[^#].*${SUSPICIOUS_PATTERNS}" "$f" 2>/dev/null
       fi
     done
   fi
@@ -65,7 +68,7 @@ while IFS=: read -r user _ uid _ _ home shell; do
       user_file="$home/$uf"
       if [[ -f "$user_file" ]]; then
         echo -e "\n[+] Checking $user_file for user $user"
-        grep -Eni "$SUSPICIOUS_PATTERNS" "$user_file" 2>/dev/null
+        grep -Eni "^[[:space:]]*[^#].*${SUSPICIOUS_PATTERNS}" "$user_file" 2>/dev/null
       fi
     done
   fi

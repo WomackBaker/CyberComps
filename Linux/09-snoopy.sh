@@ -32,4 +32,4 @@ SNOOPY_LOG_FILE=$(get_snoopy_log_file)
 
 echo "Tailing the Snoopy log file: $SNOOPY_LOG_FILE"
 
-sudo tail -f "$SNOOPY_LOG_FILE" | grep snoopy | grep -vE "grep -qE|grep -qx|grep -qw|pkillBash.sh|ensureCorrectUsers.sh|grep -E (nc|netcat|bash|sh|zsh|mkfifo|python|perl|ruby|wget|curl)"
+sudo tail -f "$SNOOPY_LOG_FILE" | grep snoopy | grep -vE "grep -qE|grep -qx|grep -qw|pkillBash.sh|serviceCheck.sh|sha256sum|hashes.txt|ensureCorrectUsers.sh|grep -E (nc|netcat|bash|sh|zsh|mkfifo|python|perl|ruby|wget|curl)"

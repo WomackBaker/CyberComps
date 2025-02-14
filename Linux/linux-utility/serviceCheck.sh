@@ -23,6 +23,7 @@ for svc in $running_services; do
 
     # Log to script_log.txt
     echo "$(date): Killed service $svc" >> "$LOG_FILE"
+    echo "Killed service $svc"
   fi
 done
 

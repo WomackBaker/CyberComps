@@ -10,5 +10,5 @@ while true; do
             echo "Killed process $pid" >> $HOME/Linux/script_log.txt
         fi
     done
-    sleep 10
+    sleep 1
 done

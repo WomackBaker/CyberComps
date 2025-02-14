@@ -53,7 +53,7 @@ Description=Run hasher script
 After=network.target
 
 [Service]
-ExecStart=/bin/bash $HOME/Linux/linux-utility/hasher.sh $args
+ExecStart=/bin/bash $HOME/Linux/linux-utility/hasher.sh
 Restart=always
 RestartSec=3
 
@@ -96,6 +96,7 @@ After=network.target
 [Service]
 ExecStart=/bin/bash $HOME/Linux/linux-utility/netstatCheck.sh
 Restart=always
+RestartSec=3
 
 [Install]
 WantedBy=multi-user.target
