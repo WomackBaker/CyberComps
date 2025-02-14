@@ -2,10 +2,6 @@
 # Original authorship references: @d_tranman/Nigel Gerald/Nigerald, modified by jtrigg,
 # modified by Baker Womack for USC. Further modified to simply list current system users.
 
-# ------------------------------
-# 1. The rest of your original script minus user_list.txt references
-# ------------------------------
-
 echo "############# Checking CronTabs in /etc/crontab"
 cat /etc/crontab
 

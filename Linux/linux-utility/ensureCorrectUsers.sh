@@ -6,30 +6,50 @@ EXCLUDE_FILE="$HOME/Linux/exclude.txt"
 while true; do
 
     ########################################################
-    # 1. Read admin & normal users from user_list.txt
+    # 1. Read admin & normal users from user_list.txt (sectioned)
     ########################################################
-
     if [[ ! -f "$USER_FILE" ]]; then
         echo "Error: $USER_FILE does not exist. Exiting..."
         exit 1
     fi
 
-    # We expect exactly two lines in user_list.txt:
-    #   1) Admin users
-    #   2) Normal users
-    mapfile -t lines < "$USER_FILE"
+    # Parse file with sections "Sudo:" and "Normal:"
+    administratorGroup=()
+    normalUsers=()
+    current_section=""
 
-    if [[ ${#lines[@]} -lt 2 ]]; then
-        echo "Error: $USER_FILE must have at least two lines (admins on line 1, normal users on line 2)."
+    while IFS= read -r line; do
+        # Trim leading/trailing whitespace
+        trimmed=$(echo "$line" | sed 's/^[ \t]*//;s/[ \t]*$//')
+        # Skip empty lines
+        if [[ -z "$trimmed" ]]; then
+            continue
+        fi
+
+        # Identify section headers
+        if [[ "$trimmed" == "Sudo:" ]]; then
+            current_section="admin"
+            continue
+        elif [[ "$trimmed" == "Normal:" ]]; then
+            current_section="normal"
+            continue
+        fi
+
+        # Add user to the appropriate list
+        if [[ "$current_section" == "admin" ]]; then
+            administratorGroup+=("$trimmed")
+        elif [[ "$current_section" == "normal" ]]; then
+            normalUsers+=("$trimmed")
+        fi
+    done < "$USER_FILE"
+
+    if [[ ${#administratorGroup[@]} -eq 0 || ${#normalUsers[@]} -eq 0 ]]; then
+        echo "Error: $USER_FILE must contain both Sudo and Normal sections with at least one user each."
         exit 1
     fi
 
-    # Parse first line as admin users, second line as normal users
-    IFS=' ' read -r -a administratorGroup <<< "${lines[0]}"
-    IFS=' ' read -r -a normalUsers <<< "${lines[1]}"
-
     # Always keep root in the admin group (if not already listed)
-    if [[ ! " ${administratorGroup[*]} " =$HOME " root " ]]; then
+    if ! printf '%s\n' "${administratorGroup[@]}" | grep -qw "root"; then
         administratorGroup+=("root")
     fi
 
@@ -44,7 +64,7 @@ while true; do
     if [[ -f "$EXCLUDE_FILE" ]]; then
         # Read each line, skip if line is empty or begins with #
         while IFS= read -r line; do
-            [[ -z "$line" || "$line" =$HOME ^# ]] && continue
+            [[ -z "$line" || "$line" =~ ^# ]] && continue
             excludeUsers+=( "$line" )
         done < "$EXCLUDE_FILE"
     else
@@ -59,7 +79,6 @@ while true; do
     while IFS=: read -r username _ _ _ _ _ shell; do
         # Skip if user is in exclude file
         if printf '%s\n' "${excludeUsers[@]}" | grep -qx "$username"; then
-            # This user is explicitly excluded from removal
             continue
         fi
 

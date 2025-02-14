@@ -1,13 +1,15 @@
 #!/bin/bash
 
+# filepath: /C:/Users/kipwo/OneDrive - University of South Carolina/Desktop/CyberComps/Linux/02-findNonExistentUsers.sh
+
 # Path to the text file containing user names
 USER_FILE="$HOME/Linux/user_list.txt"
 EXCLUDE_FILE="$HOME/Linux/exclude.txt"
 
 valid_shells=(/bin/bash /bin/sh /usr/bin/zsh /usr/bin/fish)
 
-# Read predefined users from user_list.txt
-readarray -t predefined_users < "$USER_FILE"
+# Read predefined users from user_list.txt ignoring section headers and blank lines
+readarray -t predefined_users < <(grep -v ':$' "$USER_FILE" | sed '/^\s*$/d')
 # Read users to exclude from exclude.txt
 readarray -t exclude_users < "$EXCLUDE_FILE"
 
