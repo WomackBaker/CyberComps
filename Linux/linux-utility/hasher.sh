@@ -9,8 +9,8 @@ while true; do
     #    Format of hashes.txt is assumed:
     #      passwd_hash: <hash>
     #      shadow_hash: <hash>
-    stored_passwd_hash="$(awk -F': ' '/^passwd_hash:/{print $2}' $HOME/Linux/linux-utility/hashes.txt)"
-    stored_shadow_hash="$(awk -F': ' '/^shadow_hash:/{print $2}' $HOME/Linux/linux-utility/hashes.txt)"
+    stored_passwd_hash="$(awk -F': ' '/^passwd_hash:/{print $2}' /root/Linux/linux-utility/hashes.txt)"
+    stored_shadow_hash="$(awk -F': ' '/^shadow_hash:/{print $2}' /root/Linux/linux-utility/hashes.txt)"
 
     # 3. Compare them
     if [[ "$current_passwd_hash" == "$stored_passwd_hash" && \
@@ -18,7 +18,7 @@ while true; do
         echo "Password and shadow files have not changed."
     else
         echo "ALERT PASSWORD CHANGED"
-        echo "$(date): ALERT PASSWORD CHANGED" >> $HOME/Linux/script_log.txt
+        echo "$(date): ALERT PASSWORD CHANGED" >> /root/Linux/script_log.txt
     fi
 
     sleep 10
