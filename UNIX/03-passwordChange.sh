@@ -23,7 +23,6 @@ noLoginShells=(
 # 2. OS Detection
 # -----------------------------
 OS="unknown"
-
 if [[ -f /etc/os-release ]]; then
   . /etc/os-release
   OS="$ID"
@@ -34,7 +33,6 @@ fi
 # -----------------------------
 # 3. Read Excluded Users
 # -----------------------------
-
 declare -A excludedUsersMap
 
 if [[ -f "$EXCLUDE_FILE" ]]; then
@@ -62,16 +60,18 @@ set_password() {
 
   case "$OS" in
     freebsd)
+      # Use 'pw' to set the password via standard input
       printf "%s\n" "$pass" | pw usermod "$user" -h 0
       ;;
     *)
+      # Fallback for other systems
       printf "%s:%s\n" "$user" "$pass" | chpasswd
       ;;
   esac
 }
 
 # -----------------------------
-# 5. Determine user list source
+# 5. Determine User List Source
 # -----------------------------
 userListCmd="cat /etc/passwd"
 if command -v getent &>/dev/null; then
@@ -84,12 +84,15 @@ fi
 declare -A userPasswords
 
 while IFS=: read -r username _ uid _ _ _ shell; do
+  # Skip excluded users
   [[ ${excludedUsersMap["$username"]} ]] && continue
 
+  # Skip users with a no-login shell
   for nlShell in "${noLoginShells[@]}"; do
     [[ "$shell" == "$nlShell" ]] && continue 2
   done
 
+  # Skip system users (assumes normal users have uid >= 1000)
   (( uid < 1000 )) && continue
 
   newPass=$(generate_password) || { printf "Failed to generate password for %s\n" "$username" >&2; continue; }

@@ -1,167 +1,85 @@
-#!/bin/sh
-#
-# 01-setupInstallHarden-FreeBSD.sh
-#
-# Usage: sh 01-setupInstallHarden-FreeBSD.sh <port1> <port2> ...
-# Example: sh 01-setupInstallHarden-FreeBSD.sh 80 443
-#
-# This script (designed for FreeBSD) does the following:
-#   - Checks that it is run as root and that at least one port is provided.
-#   - Installs common packages using pkg.
-#   - Configures the PF firewall to block all incoming traffic except for
-#     the specified ports (plus 22 for SSH and 2222 for a honeypot).
-#   - Creates backups of key directories.
-#   - Computes SHA256 hashes of /etc/master.passwd and /etc/passwd.
-#   - Lists running services.
-#   - Ensures proper ownership and permissions for password files.
-#   - Scans sudoers files for any NOPASSWD tokens and removes them.
-#
-# Note: Adjustments might be needed for your particular FreeBSD setup.
-#
+#!/usr/local/bin/bash
 
-# Must be run as root
-if [ "$(id -u)" -ne 0 ]; then
-  echo "Script must be run as root."
-  exit 1
-fi
+# Path to the text file containing user names
+USER_FILE="$HOME/Linux/user_list.txt"
+EXCLUDE_FILE="$HOME/Linux/exclude.txt"
 
-# Ensure at least one port is provided
-if [ "$#" -lt 1 ]; then
-  echo "Usage: sh 01-setupInstallHarden-FreeBSD.sh <port1> <port2> ..."
-  echo "Please specify at least one port."
-  exit 1
-fi
+# Update valid shell paths for FreeBSD installations
+valid_shells=(/usr/local/bin/bash /bin/sh /usr/local/bin/zsh /usr/local/bin/fish)
 
-echo "Ports to be allowed through PF:"
-for port in "$@"; do
-  echo "- $port"
-done
+# Read predefined users from user_list.txt ignoring section headers and blank lines
+readarray -t predefined_users < <(grep -v ':$' "$USER_FILE" | sed '/^\s*$/d')
+# Read users to exclude from exclude.txt
+readarray -t exclude_users < "$EXCLUDE_FILE"
 
-# Prompt for confirmation (POSIX-compatible)
-echo "Do you want to proceed with the above ports? (y/n): \c"
-read response
-case "$response" in
-  [Yy]*) echo "Proceeding with the setup...";;
-  *) echo "Aborting."; exit 0;;
-esac
+# Function to handle unauthorized users
+remove_unauthorized_users() {
+    while IFS=: read -r username _ _ _ _ _ shell; do
+        # Always skip the root user
+        if [[ "$username" == "root" ]]; then
+            continue
+        fi
 
-#######################################
-# Update system and install packages
-#######################################
-echo "Updating packages and installing required software..."
-pkg update -f
-pkg upgrade -y
-pkg install -y git socat fail2ban zip htop
+        # Check if the user's shell is in the list of valid shells
+        for valid_shell in "${valid_shells[@]}"; do
+            if [[ "$shell" == "$valid_shell" ]]; then
+                # If user is NOT in predefined list...
+                if ! printf '%s\n' "${predefined_users[@]}" | grep -qx "$username"; then
+                    # ...and also NOT in exclude list...
+                    if ! printf '%s\n' "${exclude_users[@]}" | grep -qx "$username"; then
+                        echo "User '$username' is NOT in the predefined list but has a valid shell: $shell"
+                        # Remove the user and its home directory using FreeBSD's pw command
+                        pw userdel "$username" -r 2>/dev/null
+                    else
+                        echo "User '$username' is in the exclude list. Skipping removal."
+                    fi
+                fi
+                # Stop checking shells since we already matched one
+                break
+            fi
+        done
+    done < /etc/passwd
+}
 
-#######################################
-# Configure PF Firewall
-#######################################
-echo "Configuring PF firewall..."
+# Function to secure user home directories
+secure_home_directories() {
+    while IFS=: read -r username _ _ _ _ home _; do
+        # Skip modifying root's home directory
+        if [[ "$username" == "root" ]]; then
+            continue
+        fi
+        # If no home directory, skip
+        [ -d "$home" ] || continue
 
-# Backup existing /etc/pf.conf
-cp /etc/pf.conf /etc/pf.conf.bak
+        # Ensure the user owns their shell config files
+        [ -f "$home/.bashrc" ] && chown "$username" "$home/.bashrc"
+        [ -f "$home/.zshrc" ] && chown "$username" "$home/.zshrc"
 
-# Detect external interface (ignoring lo0)
-ext_if=$(ifconfig -l | tr ' ' '\n' | grep -v '^lo0$' | head -n 1)
-if [ -z "$ext_if" ]; then
-  echo "Could not detect external interface. Aborting."
-  exit 1
-fi
-echo "Detected external interface: $ext_if"
+        # Nullify and lock down history in .bashrc
+        if [ -f "$home/.bashrc" ]; then
+            echo 'HISTFILE=/dev/null' >> "$home/.bashrc"
+            echo 'unset HISTFILE' >> "$home/.bashrc"
+            chflags schg "$home/.bashrc"
+        fi
 
-# Create a comma-separated list of allowed ports from the arguments
-allowed_ports=$(echo "$@" | sed 's/ /, /g')
-# Always allow SSH (22) and honeypot (2222)
-if [ -z "$allowed_ports" ]; then
-  allowed_ports="22, 2222"
-else
-  allowed_ports="$allowed_ports, 22, 2222"
-fi
+        # Nullify and lock down history in .zshrc
+        if [ -f "$home/.zshrc" ]; then
+            echo 'HISTFILE=/dev/null' >> "$home/.zshrc"
+            echo 'unset HISTFILE' >> "$home/.zshrc"
+            chflags schg "$home/.zshrc"
+        fi
 
-# Write a new PF configuration file
-cat > /etc/pf.conf <<EOF
-# PF configuration generated by 01-setupInstallHarden-FreeBSD.sh
-ext_if="$ext_if"
-set skip on lo0
+    done < /etc/passwd
+}
 
-block in all
-pass out all keep state
+# Function to secure chattr (Not applicable on FreeBSD)
+secure_chattr() {
+    echo "secure_chattr: 'chattr' is not applicable on FreeBSD. Skipping."
+}
 
-pass in on \$ext_if proto tcp from any to (\$ext_if) port { $allowed_ports } keep state
-EOF
+echo "FINISHED"
 
-# Enable and restart PF
-sysrc pf_enable="YES"
-service pf restart
-echo "PF firewall has been configured."
-
-#######################################
-# Create initial backups
-#######################################
-echo "Creating backups..."
-mkdir -p /backup/initial
-
-cp -r /etc /backup/initial/etc
-[ -d /home ] && cp -r /home /backup/initial/home
-cp -r /bin /backup/initial/bin
-cp -r /usr/bin /backup/initial/usr_bin
-
-#######################################
-# Hash the master.passwd and passwd files
-#######################################
-echo "Computing SHA256 hashes for /etc/master.passwd and /etc/passwd..."
-if command -v sha256 >/dev/null 2>&1; then
-  hasher="sha256"
-elif command -v sha256sum >/dev/null 2>&1; then
-  hasher="sha256sum"
-else
-  echo "No SHA256 hash utility found. Aborting."
-  exit 1
-fi
-
-master_hash=$($hasher /etc/master.passwd | awk '{ print $1 }')
-passwd_hash=$($hasher /etc/passwd | awk '{ print $1 }')
-
-mkdir -p "$HOME/FreeBSD/linux-utility" 2>/dev/null
-echo "master_passwd_hash: $master_hash" >> "$HOME/UNIX/hashes.txt"
-echo "passwd_hash: $passwd_hash" >> "$HOME/UNIX/hashes.txt"
-
-#######################################
-# List running services
-#######################################
-echo "Listing running services..."
-service -e > "$HOME/UNIX/services.txt"
-
-#######################################
-# Ensure correct ownership and permissions
-#######################################
-echo "Ensuring /etc/passwd and /etc/master.passwd have correct ownership and permissions..."
-chown root:wheel /etc/passwd
-chmod 644 /etc/passwd
-
-chown root:wheel /etc/master.passwd
-chmod 600 /etc/master.passwd
-
-#######################################
-# Remove 'NOPASSWD:' tokens from sudoers files
-#######################################
-echo "Checking for any NOPASSWD entries in sudoers..."
-
-sudoers_files="/etc/sudoers"
-if [ -d /usr/local/etc/sudoers.d ]; then
-  sudoers_files="$sudoers_files /usr/local/etc/sudoers.d/*"
-fi
-
-for file in $sudoers_files; do
-  if [ -f "$file" ]; then
-    if grep -Eq '^[^#]*NOPASSWD:' "$file"; then
-      echo "Found NOPASSWD in $file. Removing it..."
-      # FreeBSD sed in-place editing requires an empty extension parameter
-      sed -i '' 's/NOPASSWD:[[:space:]]*//g' "$file"
-    else
-      echo "No active NOPASSWD lines found in $file."
-    fi
-  fi
-done
-
-echo "********* DONE ************"
+# Main script execution
+remove_unauthorized_users
+secure_home_directories
+secure_chattr

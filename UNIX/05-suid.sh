@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Will automatically enumerate and remove dangerous SUID binaries.
 echo "==================================="
 echo " SUIDER - SUID Exploit Finder Tool "
