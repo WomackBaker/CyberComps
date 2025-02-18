@@ -1,4 +1,4 @@
-#!/usr/local/bin/bash
+#!/usr/bin/env bash
 
 # Path to the text file containing user names
 USER_FILE="$HOME/Linux/user_list.txt"

@@ -1,4 +1,4 @@
-#!/usr/local/bin/bash
+#!/usr/bin/env bash
 #
 # 01-setupInstallHarden.sh (FreeBSD version)
 # Usage: bash 01-setupInstallHarden.sh <port1> <port2> ...
@@ -33,11 +33,6 @@ fi
 #######################################
 # OS Detection & Package Installation
 #######################################
-os=$(uname -s)
-if [ "$os" != "FreeBSD" ]; then
-    echo "Unsupported OS ($os). This script is intended for FreeBSD."
-    exit 1
-fi
 
 echo "FreeBSD detected. Updating and installing necessary packages..."
 pkg update -f
