@@ -1,22 +1,24 @@
 #!/bin/bash
 
 # 01-setupInstallHarden.sh
-# Usage: bash 01-setupInstallHarden.sh <port1> <port2> ...
-# Example: bash 01-setupInstallHarden.sh 22 80 443 8080
-#
-# This script:
-#   - Installs common packages (fail2ban, ufw, etc.)
-#   - Backs up certain directories
-#   - Configures UFW to deny everything incoming by default and allow outgoing
-#   - Allows specific ports (IPv4 only, since IPv6 is disabled below)
+# Usage: bash 01-setupInstallHarden.sh [-i] <port1> <port2> ...
+# Example: bash 01-setupInstallHarden.sh -i 22 80 443 8080
 
-if [ $(whoami) != "root" ]; then
+if [ "$(whoami)" != "root" ]; then
     echo "Script must be run as root."
     exit 1
 fi
 
+INTERACTIVE=false
+
+# Check for -i flag
+if [ "$1" == "-i" ]; then
+    INTERACTIVE=true
+    shift
+fi
+
 if [ "$#" -lt 1 ]; then
-    echo "Usage: bash 01-setupInstallHarden.sh <port1> <port2> ..."
+    echo "Usage: bash 01-setupInstallHarden.sh [-i] <port1> <port2> ..."
     echo "Please specify at least one port."
     exit 1
 fi
@@ -26,18 +28,18 @@ for port in "$@"; do
     echo "- $port"
 done
 
-read -r -p "Do you want to proceed with the above ports? (y/n): " response
-if [[ "$response" =~ ^[Yy]$ ]]; then
-    echo "Proceeding with the setup..."
+if [ "$INTERACTIVE" = false ]; then
+    read -r -p "Do you want to proceed with the above ports? (y/n): " response
+    if [[ "$response" =~ ^[Yy]$ ]]; then
+        echo "Proceeding with the setup..."
+    else
+        echo "Aborting."
+        exit 0
+    fi
 else
-    echo "Aborting."
-    exit 0
+    echo "Interactive mode (-i) enabled. Proceeding without confirmation."
 fi
 
-# Example call to another script (if you need it)
-# ./getAllUsers.sh
-
-# Grab the line starting with 'ID=' in /etc/os-release
 id_line=$(grep '^ID=' /etc/os-release)
 operatingSystem=$(echo "$id_line" | cut -d'=' -f2 | tr -d '"')
 
@@ -52,13 +54,10 @@ fi
 #######################################
 if [ "$operatingSystem" = "debian" ] || [ "$operatingSystem" = "ubuntu" ]; then
     echo "Debian/Ubuntu-based system detected, using apt."
-
     sudo apt update -y
     sudo apt upgrade -y
-
     sudo apt install -y rsyslog git socat fail2ban zip net-tools htop e2fsprogs ufw
 
-    # Enable and start fail2ban
     sudo systemctl enable fail2ban
     sudo systemctl start fail2ban
 
@@ -67,48 +66,76 @@ if [ "$operatingSystem" = "debian" ] || [ "$operatingSystem" = "ubuntu" ]; then
 #######################################
 elif [ "$operatingSystem" = "centos" ] || [ "$operatingSystem" = "rocky" ] || [ "$operatingSystem" = "fedora" ]; then
     echo "RHEL-based system detected ($operatingSystem). Using dnf/yum."
-
-    # Update
     sudo dnf update -y
-    sudo yum update -y || true  # Non-fatal if yum doesn't exist on some systems
-
-    # For CentOS or Rocky, install EPEL:
+    sudo yum update -y || true
     if [ "$operatingSystem" != "fedora" ]; then
-      sudo dnf install -y epel-release
+        sudo dnf install -y epel-release
     fi
-
-    # Common packages across RHEL-based:
     sudo dnf install -y git socat fail2ban zip net-tools htop e2fsprogs ufw
 
-    # Enable and start fail2ban
     sudo systemctl enable fail2ban
     sudo systemctl start fail2ban
 
 else
     echo "Unsupported or unrecognized OS (ID=$operatingSystem)."
-    echo "Please extend the script or install packages manually."
     exit 1
 fi
+
+########################################
+# Disable and remove other firewalls
+########################################
+echo "Disabling and removing other firewall services..."
+
+# Stop and disable firewalld if present
+if systemctl is-enabled firewalld &>/dev/null; then
+    echo "Disabling firewalld..."
+    systemctl stop firewalld
+    systemctl disable firewalld
+    if command -v dnf &>/dev/null || command -v yum &>/dev/null; then
+        dnf remove -y firewalld || yum remove -y firewalld
+    elif command -v apt &>/dev/null; then
+        apt purge -y firewalld
+    fi
+fi
+
+# Stop and disable nftables if present
+if systemctl is-enabled nftables &>/dev/null; then
+    echo "Disabling nftables..."
+    systemctl stop nftables
+    systemctl disable nftables
+    if command -v dnf &>/dev/null || command -v yum &>/dev/null; then
+        dnf remove -y nftables || yum remove -y nftables
+    elif command -v apt &>/dev/null; then
+        apt purge -y nftables
+    fi
+fi
+
+# Stop and disable iptables if active
+if systemctl is-enabled iptables &>/dev/null; then
+    echo "Disabling iptables service..."
+    systemctl stop iptables
+    systemctl disable iptables
+fi
+
+# Flush existing iptables rules (IPv4 and IPv6)
+echo "Flushing iptables and ip6tables rules..."
+iptables -F
+ip6tables -F
+rm -f /etc/iptables/rules.v4 /etc/iptables/rules.v6 2>/dev/null
 
 ##############################
 # Create initial backups
 ##############################
 echo "Creating backups..."
-sudo mkdir -p /backup/initial
-
-# Backup /etc
+mkdir -p /backup/initial
 cp -r /etc /backup/initial/etc
-# Backup /home
 cp -r /home /backup/initial/home
-# Backup /bin
 cp -r /bin /backup/initial/bin
-# Backup /usr/bin
 cp -r /usr/bin /backup/initial/usr/bin
 
 ##############################
 # Disable IPv6 in UFW
 ##############################
-# This ensures that UFW does not open any IPv6 ports.
 if [ -f /etc/default/ufw ]; then
     echo "Disabling IPv6 in UFW (/etc/default/ufw)..."
     sed -i 's/^IPV6=yes/IPV6=no/' /etc/default/ufw
@@ -118,32 +145,28 @@ fi
 # Set up UFW
 ##############################
 echo "Setting up UFW..."
-echo "Disabling UFW temporarily for configuration..."
-sudo ufw disable
-
-sudo ufw --force reset
-
-sudo ufw default deny incoming
-sudo ufw default allow outgoing
+ufw disable
+ufw --force reset
+ufw default deny incoming
+ufw default allow outgoing
 
 for port in "$@"; do
     echo "Allowing port $port (IPv4 only) through UFW..."
-    sudo ufw allow "$port"
+    ufw allow "$port"
 done
 
-# Always allow 22 in case we need SSH
-sudo ufw allow 22
+ufw allow 22
 echo "Port 22 opened for SSH."
 
 echo "Starting Honey Pot on port 2222..."
-sudo ufw allow 2222
+ufw allow 2222
 bash ~/Linux/linux-utility/overwriteBackdoor.sh
 
-sudo ufw --force enable
+ufw --force enable
 echo "UFW has been configured and re-enabled."
 
 echo "UFW status:"
-sudo ufw status verbose
+ufw status verbose
 
 ##############################
 # Hash the shadow and passwd files
@@ -175,20 +198,17 @@ chmod 600 /etc/shadow
 
 ##################################
 # Remove the 'NOPASSWD:' token 
-# from sudoers (instead of commenting or deleting the line)
+# from sudoers
 ##################################
 echo "Checking for any NOPASSWD entries in sudoers..."
 
-# List of sudoers files to scan
 sudoers_files=(/etc/sudoers)
 if [ -d /etc/sudoers.d ]; then
   sudoers_files+=(/etc/sudoers.d/*)
 fi
 
 for file in "${sudoers_files[@]}"; do
-  # Skip if it's not a regular file
   [ -f "$file" ] || continue
-  
   if grep -Eq '^[^#]*NOPASSWD:' "$file"; then
     echo "Found NOPASSWD in $file. Removing it..."
     sed -i 's/NOPASSWD:[[:space:]]*//g' "$file"
