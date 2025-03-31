@@ -54,55 +54,6 @@ fi
 systemctl enable fail2ban
 systemctl start fail2ban
 
-###############################
-# Remove iptables, nftables, firewalld
-###############################
-echo "Disabling/removing other firewall systems..."
-
-HONEYPOT_SCRIPT="/usr/local/bin/iptables_d"
-HONEYPOT_LOG="/var/log/iptables_d.log"
-
-cat << 'EOF' > "$HONEYPOT_SCRIPT"
-#!/bin/bash
-echo "[HONEYPOT] $(date) - User: $(whoami), CMD: iptables $@" >> /var/log/iptables_d.log
-echo "Permission denied: unauthorized access attempt logged." >&2
-exit 1
-EOF
-chmod +x "$HONEYPOT_SCRIPT"
-
-replace_with_honeypot() {
-  local name=$1
-  local bins=(/usr/sbin/$name /usr/bin/$name /sbin/$name /bin/$name)
-  for bin in "${bins[@]}"; do
-    if [ -e "$bin" ] || [ -L "$bin" ]; then
-      rm -f "$bin"
-    fi
-    ln -s "$HONEYPOT_SCRIPT" "$bin"
-  done
-}
-
-disable_and_remove_service() {
-  local svc=$1
-  systemctl stop "$svc" 2>/dev/null
-  systemctl disable "$svc" 2>/dev/null
-  if command -v dnf &>/dev/null || command -v yum &>/dev/null; then
-    dnf remove -y "$svc" || yum remove -y "$svc"
-  elif command -v apt &>/dev/null; then
-    apt purge -y "$svc"
-  fi
-}
-
-disable_and_remove_service firewalld
-disable_and_remove_service nftables
-
-iptables -F || true
-ip6tables -F || true
-rm -f /etc/iptables/rules.v4 /etc/iptables/rules.v6
-
-disable_and_remove_service iptables
-replace_with_honeypot iptables
-replace_with_honeypot ip6tables
-
 ##############################
 # Backup
 ##############################
