@@ -9,7 +9,7 @@ fi
 # Update and install prerequisites
 apt update
 apt install -y gpg apt-transport-https software-properties-common
-
+apt install -y sshpass
 # Install Git, Nmap, Net-tools, Curl, Wget, Flameshot, Terminator, LibreOffice
 apt install -y git nmap net-tools curl wget flameshot terminator libreoffice
 
