@@ -30,13 +30,6 @@ get_snoopy_log_file() {
     fi
 }
 
-SNOOPY_LOG_FILE=$(get_snoopy_log_file)
-
-echo "Tailing the Snoopy log file: $SNOOPY_LOG_FILE"
-
-sudo tail -f "$SNOOPY_LOG_FILE" | grep snoopy | grep -vE "grep -qE|grep -qx|grep -qw|pkillBash.sh|serviceCheck.sh|sha256sum|hashes.txt|ensureCorrectUsers.sh|grep -E (nc|netcat|bash|sh|zsh|mkfifo|python|perl|ruby|wget|curl)"
-
-
 # Ensure root
 if [ "$(id -u)" -ne 0 ]; then
   echo "Script must be run as root."
@@ -85,7 +78,7 @@ fi
 hash -r
 
 # Path to the file you want to copy
-SOURCE_FILE="AllPasswords.csv"
+SOURCE_FILE="/root/Linux/AllPasswords.csv"
 
 # Check if the file exists
 if [[ ! -f "$SOURCE_FILE" ]]; then
@@ -101,12 +94,6 @@ for dir in /home/*; do
     fi
 done
 
-# Also copy to root's home directory
-cp "$SOURCE_FILE" /root/ && echo "Copied to /root/"
-
-
-cd $HOME/ && git clone https://github.com/gerbsec/Nixarmor-But-Better.git && cd Nixarmor-But-Better && git checkout ccdc && sudo bash init.sh 
-
 cp ./linux-utility/pspy.sh /usr/bin/local/pspy.sh
 chmod +x /usr/bin/local/pspy.sh
 echo "pspy.sh installed to /usr/bin/local/pspy.sh"
@@ -118,3 +105,5 @@ echo "snoopy.sh installed to /usr/bin/local/snoopy.sh"
 cp ./linux-utility/ipban.sh /usr/bin/local/ipban.sh
 chmod +x /usr/bin/local/ipban.sh
 echo "ipban.sh installed to /usr/bin/local/ipban.sh"
+
+cd $HOME/ && git clone https://github.com/gerbsec/Nixarmor-But-Better.git && cd Nixarmor-But-Better && git checkout ccdc && sudo bash init.sh 
