@@ -32,7 +32,7 @@ INSTANCE_NAME="$1"
 IP="$(echo "$INSTANCE_NAME" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' | tail -1)"
 
 if [[ "$IP" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]] && [ "$IP" != "127.0.0.1" ]; then
-    ufw deny from "$IP" to any port 2222
+    ufw insert 1 deny from "$IP" to any
 fi
 
 exec /bin/redd
