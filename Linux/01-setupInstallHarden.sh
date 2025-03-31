@@ -24,7 +24,7 @@ fi
 echo "Ports to be allowed through UFW (IPv4 only, IPv6 is disabled):"
 for port in "$@"; do
     echo "- $port"
-fi
+done
 
 if [ "$INTERACTIVE" = false ]; then
     read -r -p "Do you want to proceed with the above ports? (y/n): " response
