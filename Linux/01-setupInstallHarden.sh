@@ -86,42 +86,89 @@ fi
 ########################################
 echo "Disabling and removing other firewall services..."
 
-# Stop and disable firewalld if present
-if systemctl is-enabled firewalld &>/dev/null; then
-    echo "Disabling firewalld..."
+# === FIREWALLD ===
+if systemctl list-unit-files | grep -q firewalld.service; then
+    echo "[+] Stopping and disabling firewalld..."
     systemctl stop firewalld
     systemctl disable firewalld
-    if command -v dnf &>/dev/null || command -v yum &>/dev/null; then
-        dnf remove -y firewalld || yum remove -y firewalld
-    elif command -v apt &>/dev/null; then
-        apt purge -y firewalld
-    fi
 fi
 
-# Stop and disable nftables if present
-if systemctl is-enabled nftables &>/dev/null; then
-    echo "Disabling nftables..."
+echo "[+] Removing firewalld package..."
+if command -v dnf &>/dev/null || command -v yum &>/dev/null; then
+    dnf remove -y firewalld || yum remove -y firewalld
+elif command -v apt &>/dev/null; then
+    apt purge -y firewalld
+fi
+
+echo "[+] Deleting firewalld binaries..."
+firewalld_bins=(/usr/sbin/firewalld /usr/bin/firewalld /sbin/firewalld /bin/firewalld /usr/lib/firewalld)
+for path in "${firewalld_bins[@]}"; do
+    if [ -e "$path" ]; then
+        echo "    Removing: $path"
+        rm -rf "$path"
+    fi
+done
+
+
+# === NFTABLES ===
+if systemctl list-unit-files | grep -q nftables.service; then
+    echo "[+] Stopping and disabling nftables..."
     systemctl stop nftables
     systemctl disable nftables
-    if command -v dnf &>/dev/null || command -v yum &>/dev/null; then
-        dnf remove -y nftables || yum remove -y nftables
-    elif command -v apt &>/dev/null; then
-        apt purge -y nftables
-    fi
 fi
 
-# Stop and disable iptables if active
-if systemctl is-enabled iptables &>/dev/null; then
-    echo "Disabling iptables service..."
+echo "[+] Removing nftables package..."
+if command -v dnf &>/dev/null || command -v yum &>/dev/null; then
+    dnf remove -y nftables || yum remove -y nftables
+elif command -v apt &>/dev/null; then
+    apt purge -y nftables
+fi
+
+echo "[+] Deleting nft binaries..."
+nft_bins=(/usr/sbin/nft /usr/bin/nft /sbin/nft /bin/nft)
+for path in "${nft_bins[@]}"; do
+    if [ -e "$path" ]; then
+        echo "    Removing: $path"
+        rm -f "$path"
+    fi
+done
+
+
+# === IPTABLES ===
+if systemctl list-unit-files | grep -q iptables.service; then
+    echo "[+] Stopping and disabling iptables..."
     systemctl stop iptables
     systemctl disable iptables
 fi
 
-# Flush existing iptables rules (IPv4 and IPv6)
-echo "Flushing iptables and ip6tables rules..."
-iptables -F
-ip6tables -F
+echo "[+] Flushing iptables and ip6tables rules..."
+iptables -F || true
+ip6tables -F || true
 rm -f /etc/iptables/rules.v4 /etc/iptables/rules.v6 2>/dev/null
+
+echo "[+] Removing iptables package..."
+if command -v dnf &>/dev/null || command -v yum &>/dev/null; then
+    dnf remove -y iptables || yum remove -y iptables
+elif command -v apt &>/dev/null; then
+    apt purge -y iptables
+fi
+
+echo "[+] Deleting iptables binaries..."
+iptables_bins=(/usr/sbin/iptables /usr/bin/iptables /sbin/iptables /bin/iptables /usr/sbin/ip6tables /usr/bin/ip6tables /sbin/ip6tables /bin/ip6tables)
+for path in "${iptables_bins[@]}"; do
+    if [ -e "$path" ]; then
+        echo "    Removing: $path"
+        rm -f "$path"
+    fi
+done
+
+# Optional: Clean up alternatives system
+alternatives --remove-all iptables 2>/dev/null || true
+alternatives --remove-all firewalld 2>/dev/null || true
+alternatives --remove-all nft 2>/dev/null || true
+update-alternatives --remove-all iptables 2>/dev/null || true
+update-alternatives --remove-all firewalld 2>/dev/null || true
+update-alternatives --remove-all nft 2>/dev/null || true
 
 ##############################
 # Create initial backups
