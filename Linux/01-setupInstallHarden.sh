@@ -74,6 +74,9 @@ ufw --force reset
 ufw default deny incoming
 ufw default allow outgoing
 
+# Enable UFW logging (default log level is "low").
+ufw logging on
+
 for port in "$@"; do
     ufw allow "$port"
 done
